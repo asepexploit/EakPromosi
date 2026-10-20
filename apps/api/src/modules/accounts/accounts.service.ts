@@ -1,6 +1,6 @@
 import { AppError, QUEUE_NAMES, encryptAesGcm, type EncryptionKey, type QueueFactory } from '@eak/config';
 import { type PrismaClient, TelegramAccountStatus } from '@eak/db';
-import type { StartAccountLogin, VerifyAccountCode } from '@eak/shared';
+import type { StartAccountLogin, TelegramAccount, VerifyAccountCode } from '@eak/shared';
 
 import { AuditService } from '../../lib/audit-service.js';
 import { PlanService } from '../../lib/plan-service.js';
@@ -20,7 +20,7 @@ export class AccountsService {
     private readonly encryptionKeys: EncryptionKey[],
   ) {}
 
-  async list(tenantId: string): Promise<Array<Record<string, unknown>>> {
+  async list(tenantId: string): Promise<TelegramAccount[]> {
     const rows = await this.prisma.telegramAccount.findMany({
       where: { tenantId },
       orderBy: { createdAt: 'desc' },
@@ -147,20 +147,19 @@ export class AccountsService {
     });
   }
 
-  private toDto(r: { [key: string]: unknown } & { id: string; createdAt: Date }): Record<string, unknown> {
-    const row = r as unknown as {
-      id: string;
-      displayName: string;
-      username: string | null;
-      phoneLast4: string;
-      telegramUserId: string | null;
-      status: TelegramAccountStatus;
-      capabilities: string[];
-      disabledByPlanLimit: boolean;
-      floodWaitUntil: Date | null;
-      lastError: string | null;
-      createdAt: Date;
-    };
+  private toDto(row: {
+    id: string;
+    displayName: string;
+    username: string | null;
+    phoneLast4: string;
+    telegramUserId: string | null;
+    status: TelegramAccountStatus;
+    capabilities: readonly string[];
+    disabledByPlanLimit: boolean;
+    floodWaitUntil: Date | null;
+    lastError: string | null;
+    createdAt: Date;
+  }): TelegramAccount {
     return {
       id: row.id,
       displayName: row.displayName,
@@ -168,7 +167,7 @@ export class AccountsService {
       phoneMasked: `+•• ${row.phoneLast4}`,
       telegramUserId: row.telegramUserId ?? '',
       status: row.status,
-      capabilities: row.capabilities,
+      capabilities: row.capabilities as TelegramAccount['capabilities'],
       disabledByPlanLimit: row.disabledByPlanLimit,
       floodWaitUntil: row.floodWaitUntil?.toISOString() ?? null,
       lastError: row.lastError,
@@ -180,7 +179,9 @@ export class AccountsService {
   }
 }
 
+import { createHash } from 'node:crypto';
+
 function hashPhone(phone: string): string {
   // non-reversible, used to detect duplicates without storing the number
-  return require('node:crypto').createHash('sha256').update(phone).digest('hex');
+  return createHash('sha256').update(phone).digest('hex');
 }

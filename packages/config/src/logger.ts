@@ -2,7 +2,7 @@ import { pino, type Logger as PinoLogger } from 'pino';
 
 import type { Env } from './env.js';
 
-export type Logger = PinoLogger;
+export type Logger = PinoLogger<string, boolean>;
 
 /**
  * Pino root logger. JSON in production, pretty in dev when PRETTY_LOG=true.
@@ -10,7 +10,7 @@ export type Logger = PinoLogger;
  */
 export function createLogger(env: Env, bindings: Record<string, unknown> = {}): Logger {
   const base: Record<string, unknown> = { service: bindings.service ?? 'unknown', ...bindings };
-  return pino({
+  const options: Parameters<typeof pino>[0] = {
     level: env.LOG_LEVEL,
     base,
     timestamp: pino.stdTimeFunctions.isoTime,
@@ -33,12 +33,12 @@ export function createLogger(env: Env, bindings: Record<string, unknown> = {}): 
       ],
       censor: '[REDACTED]',
     },
-    transport:
-      env.PRETTY_LOG && env.NODE_ENV !== 'production'
-        ? {
-            target: 'pino-pretty',
-            options: { colorize: true, translateTime: 'SYS:HH:MM:ss.l', ignore: 'pid,hostname' },
-          }
-        : undefined,
-  });
+  };
+  if (env.PRETTY_LOG && env.NODE_ENV !== 'production') {
+    (options as { transport?: unknown }).transport = {
+      target: 'pino-pretty',
+      options: { colorize: true, translateTime: 'SYS:HH:MM:ss.l', ignore: 'pid,hostname' },
+    };
+  }
+  return pino(options) as unknown as Logger;
 }

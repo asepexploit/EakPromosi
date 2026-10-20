@@ -14,7 +14,7 @@ export function createRedis(env: Env, opts: { forBull?: boolean; keyPrefix?: str
     lazyConnect: false,
     enableReadyCheck: !opts.forBull,
     maxRetriesPerRequest: opts.forBull ? null : 20,
-    keyPrefix: opts.keyPrefix,
   };
+  if (opts.keyPrefix) options.keyPrefix = opts.keyPrefix;
   return new Redis(env.REDIS_URL, options);
 }

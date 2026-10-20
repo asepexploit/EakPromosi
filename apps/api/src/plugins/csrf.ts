@@ -10,7 +10,8 @@ import type { FastifyInstance } from 'fastify';
  *  - For mutating requests (anything but GET/HEAD/OPTIONS) we verify the
  *    header matches the cookie, both tied to the session via HMAC.
  */
-export async function registerCsrf(app: FastifyInstance): Promise<void> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function registerCsrf(app: FastifyInstance<any, any, any, any, any>): Promise<void> {
   app.decorate('issueCsrfToken', (sessionTokenHash: string): string => {
     const nonce = randomBytes(16).toString('hex');
     const sig = hmacSha256(app.env.CSRF_SECRET, `${sessionTokenHash}.${nonce}`);

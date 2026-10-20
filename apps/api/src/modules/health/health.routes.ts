@@ -1,7 +1,8 @@
-import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
-export async function registerHealthModule(app: FastifyInstance): Promise<void> {
+import type { ApiPlugin } from '../../plugin-types.js';
+
+export const registerHealthModule: ApiPlugin = async (app) => {
   app.get(
     '/health',
     { schema: { response: { 200: z.object({ status: z.literal('ok'), uptimeSec: z.number() }) } } },
@@ -18,4 +19,4 @@ export async function registerHealthModule(app: FastifyInstance): Promise<void> 
     const body = { db: dbOk, redis: redisOk };
     void reply.status(dbOk && redisOk ? 200 : 503).send(body);
   });
-}
+};

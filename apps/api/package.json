@@ -9,7 +9,8 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:integration": "RUN_INTEGRATION=1 vitest run"
   },
   "dependencies": {
     "@eak/config": "workspace:*",
@@ -27,7 +28,7 @@
     "fastify-type-provider-zod": "4.0.2",
     "ioredis": "5.4.1",
     "pino": "9.5.0",
-    "zod": "3.23.8"
+    "zod": "3.25.28"
   },
   "devDependencies": {
     "@types/node": "20.17.1",

@@ -1,11 +1,12 @@
 import { AppError, QUEUE_NAMES } from '@eak/config';
 import { DiscoveredLinkSchema, DiscoverySourceSchema, envelope } from '@eak/shared';
-import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import { AuditService } from '../../lib/audit-service.js';
 import { PlanService } from '../../lib/plan-service.js';
 import { ok } from '../../lib/response.js';
+
+import type { ApiPlugin } from '../../plugin-types.js';
 
 const CreateSourceSchema = z.object({
   name: z.string().min(1).max(120),
@@ -15,7 +16,7 @@ const CreateSourceSchema = z.object({
   dailyLimit: z.number().int().min(1).max(10_000).default(500),
 });
 
-export async function registerDiscoveryModule(app: FastifyInstance): Promise<void> {
+export const registerDiscoveryModule: ApiPlugin = async (app) => {
   const plans = new PlanService(app.prisma);
   const audit = new AuditService(app.prisma);
 
@@ -140,4 +141,4 @@ export async function registerDiscoveryModule(app: FastifyInstance): Promise<voi
       );
     },
   );
-}
+};

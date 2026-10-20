@@ -29,7 +29,7 @@ export function PlansPage(): JSX.Element {
       </div>
       {sub && (
         <Card>
-          <CardHeader title={`Paket aktif: ${sub.planCode.toUpperCase()}`} subtitle={sub.endsAt ? `Berakhir ${new Date(sub.endsAt).toLocaleDateString()}` : undefined} />
+          <CardHeader title={`Paket aktif: ${sub.planCode.toUpperCase()}`} {...(sub.endsAt ? { subtitle: `Berakhir ${new Date(sub.endsAt).toLocaleDateString()}` } : {})} />
           <CardBody className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
             <div>
               <p className="text-xs text-muted">Akun Telegram</p>

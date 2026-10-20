@@ -5,7 +5,6 @@ import {
   VerifyAccountCodeSchema,
   envelope,
 } from '@eak/shared';
-import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import { AuditService } from '../../lib/audit-service.js';
@@ -14,7 +13,9 @@ import { ok } from '../../lib/response.js';
 
 import { AccountsService } from './accounts.service.js';
 
-export async function registerAccountsModule(app: FastifyInstance): Promise<void> {
+import type { ApiPlugin } from '../../plugin-types.js';
+
+export const registerAccountsModule: ApiPlugin = async (app) => {
   const audit = new AuditService(app.prisma);
   const plans = new PlanService(app.prisma);
   const service = new AccountsService(app.prisma, app.queues, audit, plans, app.encryptionKeys);
@@ -85,4 +86,4 @@ export async function registerAccountsModule(app: FastifyInstance): Promise<void
       void reply.status(204).send();
     },
   );
-}
+};

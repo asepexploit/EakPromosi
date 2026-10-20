@@ -10,10 +10,10 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "zod": "3.23.8"
+    "zod": "3.25.28"
   },
   "devDependencies": {
     "typescript": "5.6.3",

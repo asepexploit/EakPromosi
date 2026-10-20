@@ -5,7 +5,6 @@ import {
   UpsertBroadcastTemplateSchema,
   envelope,
 } from '@eak/shared';
-import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import { AuditService } from '../../lib/audit-service.js';
@@ -14,7 +13,9 @@ import { ok } from '../../lib/response.js';
 
 import { BroadcastsService } from './broadcasts.service.js';
 
-export async function registerBroadcastsModule(app: FastifyInstance): Promise<void> {
+import type { ApiPlugin } from '../../plugin-types.js';
+
+export const registerBroadcastsModule: ApiPlugin = async (app) => {
   const audit = new AuditService(app.prisma);
   const plans = new PlanService(app.prisma);
   const service = new BroadcastsService(app.prisma, app.queues, plans, audit);
@@ -107,4 +108,4 @@ export async function registerBroadcastsModule(app: FastifyInstance): Promise<vo
       });
     },
   );
-}
+};

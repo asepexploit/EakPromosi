@@ -7,7 +7,8 @@ import { ZodError } from 'zod';
  * Error ends up here. Shape of the response body is locked by
  * `.claude/rules/api.md`: `{ error: { code, message, details? } }`.
  */
-export async function registerErrorHandler(app: FastifyInstance): Promise<void> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function registerErrorHandler(app: FastifyInstance<any, any, any, any, any>): Promise<void> {
   app.setErrorHandler((err, req, reply) => {
     if (err instanceof ZodError) {
       void reply.status(422).send({

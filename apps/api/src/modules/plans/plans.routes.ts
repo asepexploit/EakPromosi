@@ -1,10 +1,11 @@
 import { PlanSchema, envelope } from '@eak/shared';
-import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import { ok } from '../../lib/response.js';
 
-export async function registerPlansModule(app: FastifyInstance): Promise<void> {
+import type { ApiPlugin } from '../../plugin-types.js';
+
+export const registerPlansModule: ApiPlugin = async (app) => {
   app.get(
     '/',
     { schema: { response: { 200: envelope(z.array(PlanSchema)) } } },
@@ -31,4 +32,4 @@ export async function registerPlansModule(app: FastifyInstance): Promise<void> {
       })));
     },
   );
-}
+};

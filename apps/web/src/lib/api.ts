@@ -16,7 +16,7 @@ export class ApiError extends Error {
   }
 }
 
-export interface ApiRequestInit extends Omit<RequestInit, 'body'> {
+export interface ApiRequestInit extends RequestInit {
   json?: unknown;
   query?: Record<string, string | number | boolean | undefined | null>;
 }
@@ -38,12 +38,14 @@ export async function apiFetch<T>(path: string, init: ApiRequestInit = {}): Prom
   if (auth.csrfToken) headers.set('x-csrf-token', auth.csrfToken);
   if (auth.activeTenantId) headers.set('x-tenant-id', auth.activeTenantId);
 
-  const res = await fetch(url.toString(), {
+  const fetchInit: RequestInit = {
     ...init,
     headers,
     credentials: 'include',
-    body: init.json !== undefined ? JSON.stringify(init.json) : init.body,
-  });
+  };
+  if (init.json !== undefined) fetchInit.body = JSON.stringify(init.json);
+  else if (init.body !== undefined) fetchInit.body = init.body as BodyInit;
+  const res = await fetch(url.toString(), fetchInit);
 
   if (res.status === 204) return undefined as T;
 

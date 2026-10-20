@@ -1,5 +1,6 @@
-import { LoginSchema, RegisterSchema, SessionBundleSchema, SwitchTenantSchema, envelope } from '@eak/shared';
-import type { FastifyInstance } from 'fastify';
+import { ChangePasswordSchema, LoginSchema, RegisterSchema, SessionBundleSchema, SwitchTenantSchema, envelope } from '@eak/shared';
+import { AppError } from '@eak/config';
+import * as argon2 from 'argon2';
 import { z } from 'zod';
 
 import { AuditService } from '../../lib/audit-service.js';
@@ -8,7 +9,9 @@ import { hashSessionToken } from '../../plugins/auth-context.js';
 
 import { AuthService } from './auth.service.js';
 
-export async function registerAuthModule(app: FastifyInstance): Promise<void> {
+import type { ApiPlugin } from '../../plugin-types.js';
+
+export const registerAuthModule: ApiPlugin = async (app) => {
   const auth = new AuthService(app.prisma, new AuditService(app.prisma));
 
   const sessionCookieOptions = {
@@ -80,6 +83,37 @@ export async function registerAuthModule(app: FastifyInstance): Promise<void> {
   );
 
   app.post(
+    '/change-password',
+    {
+      preHandler: app.requireAuth,
+      schema: { body: ChangePasswordSchema, response: { 204: z.object({}).optional() } },
+    },
+    async (req, reply) => {
+      const user = await app.prisma.user.findUnique({ where: { id: req.user!.id } });
+      if (!user) throw new AppError('UNAUTHORIZED', 'Session invalid');
+      const ok = await argon2.verify(user.passwordHash, req.body.currentPassword).catch(() => false);
+      if (!ok) throw new AppError('UNAUTHORIZED', 'Password saat ini salah');
+      const nextHash = await argon2.hash(req.body.newPassword, { type: argon2.argon2id });
+      await app.prisma.user.update({ where: { id: user.id }, data: { passwordHash: nextHash } });
+      // Revoke every other session so a stolen cookie can't survive the rotation.
+      const currentRaw = req.cookies[app.env.SESSION_COOKIE_NAME];
+      const currentHash = currentRaw ? hashSessionToken(currentRaw) : null;
+      await app.prisma.userSession.updateMany({
+        where: { userId: user.id, revokedAt: null, ...(currentHash ? { NOT: { tokenHash: currentHash } } : {}) },
+        data: { revokedAt: new Date() },
+      });
+      await new AuditService(app.prisma).log({
+        actorUserId: user.id,
+        action: 'auth.password_changed',
+        resource: 'user',
+        resourceId: user.id,
+        severity: 'warn',
+      });
+      void reply.status(204).send();
+    },
+  );
+
+  app.post(
     '/switch-tenant',
     {
       preHandler: app.requireAuth,
@@ -98,4 +132,4 @@ export async function registerAuthModule(app: FastifyInstance): Promise<void> {
       return ok(bundle);
     },
   );
-}
+};

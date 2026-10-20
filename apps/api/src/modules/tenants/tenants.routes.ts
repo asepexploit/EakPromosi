@@ -1,11 +1,12 @@
 import { InviteMemberSchema, TenantMemberSchema, UpdateMemberRoleSchema, envelope } from '@eak/shared';
-import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import { AuditService } from '../../lib/audit-service.js';
 import { ok } from '../../lib/response.js';
 
-export async function registerTenantsModule(app: FastifyInstance): Promise<void> {
+import type { ApiPlugin } from '../../plugin-types.js';
+
+export const registerTenantsModule: ApiPlugin = async (app) => {
   const audit = new AuditService(app.prisma);
 
   app.get(
@@ -136,4 +137,4 @@ export async function registerTenantsModule(app: FastifyInstance): Promise<void>
       void reply.status(204).send();
     },
   );
-}
+};

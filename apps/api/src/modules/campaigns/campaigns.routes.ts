@@ -1,10 +1,11 @@
 import { CampaignSummarySchema, envelope } from '@eak/shared';
-import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import { AuditService } from '../../lib/audit-service.js';
 import { PlanService } from '../../lib/plan-service.js';
 import { ok } from '../../lib/response.js';
+
+import type { ApiPlugin } from '../../plugin-types.js';
 
 const UpsertCampaignSchema = z.object({
   name: z.string().min(1).max(120),
@@ -20,7 +21,7 @@ const UpsertCampaignSchema = z.object({
     .default([]),
 });
 
-export async function registerCampaignsModule(app: FastifyInstance): Promise<void> {
+export const registerCampaignsModule: ApiPlugin = async (app) => {
   const audit = new AuditService(app.prisma);
   const plans = new PlanService(app.prisma);
 
@@ -131,4 +132,4 @@ export async function registerCampaignsModule(app: FastifyInstance): Promise<voi
       },
     );
   }
-}
+};

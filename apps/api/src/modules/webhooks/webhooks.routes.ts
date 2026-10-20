@@ -1,9 +1,10 @@
 import { AppError, QUEUE_NAMES } from '@eak/config';
 import { WebhookStatus } from '@eak/db';
-import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import { PakasirAdapter } from '../billing/pakasir.adapter.js';
+
+import type { ApiPlugin } from '../../plugin-types.js';
 
 /**
  * Pakasir webhook endpoint. The handler is intentionally thin:
@@ -14,7 +15,7 @@ import { PakasirAdapter } from '../billing/pakasir.adapter.js';
  *
  * See `.claude/rules/payment.md` + skill `pakasir-webhook`.
  */
-export async function registerWebhooksModule(app: FastifyInstance): Promise<void> {
+export const registerWebhooksModule: ApiPlugin = async (app) => {
   const adapter = new PakasirAdapter(app.env);
 
   app.post<{ Body: string }>(
@@ -96,4 +97,4 @@ function headerOne(headers: Record<string, string | string[] | undefined>, name:
   const v = headers[name];
   if (!v) return undefined;
   return Array.isArray(v) ? v[0] : v;
-}
+};

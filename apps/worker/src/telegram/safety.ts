@@ -61,7 +61,7 @@ export class RetryableJobError extends Error {
 
 export class NonRetryableJobError extends AppError {
   constructor(message: string, context?: Record<string, unknown>) {
-    super('TELEGRAM_ERROR', message, { context });
+    super('TELEGRAM_ERROR', message, context ? { context } : {});
     this.name = 'NonRetryableJobError';
   }
 }

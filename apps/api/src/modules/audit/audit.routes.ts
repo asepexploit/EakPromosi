@@ -1,11 +1,12 @@
 import { AuditLogSchema, CursorPageMetaSchema, CursorPageQuerySchema, envelope } from '@eak/shared';
-import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import { decodeCursor, nextCursor } from '../../lib/pagination.js';
 import { okPage } from '../../lib/response.js';
 
-export async function registerAuditModule(app: FastifyInstance): Promise<void> {
+import type { ApiPlugin } from '../../plugin-types.js';
+
+export const registerAuditModule: ApiPlugin = async (app) => {
   app.get(
     '/',
     {
@@ -45,4 +46,4 @@ export async function registerAuditModule(app: FastifyInstance): Promise<void> {
       return okPage(data, nextCursor(rows, req.query.limit), req.query.limit);
     },
   );
-}
+};

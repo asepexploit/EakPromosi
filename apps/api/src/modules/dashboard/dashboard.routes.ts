@@ -1,9 +1,10 @@
 import { DashboardSummarySchema, envelope } from '@eak/shared';
-import type { FastifyInstance } from 'fastify';
 
 import { ok } from '../../lib/response.js';
 
-export async function registerDashboardModule(app: FastifyInstance): Promise<void> {
+import type { ApiPlugin } from '../../plugin-types.js';
+
+export const registerDashboardModule: ApiPlugin = async (app) => {
   app.get(
     '/summary',
     { preHandler: app.requireTenant, schema: { response: { 200: envelope(DashboardSummarySchema) } } },
@@ -56,4 +57,4 @@ export async function registerDashboardModule(app: FastifyInstance): Promise<voi
       });
     },
   );
-}
+};

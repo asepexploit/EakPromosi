@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { AuditService } from '../../lib/audit-service.js';
 
@@ -16,7 +16,7 @@ function stubPrisma() {
     status: 'pending' as 'pending' | 'paid',
     plan: { id: 'plan_pro', code: 'pro' },
   };
-  return {
+  const client: Record<string, unknown> = {
     invoice: {
       findFirst: vi.fn().mockResolvedValue(invoice),
       update: vi.fn().mockImplementation(async ({ data }: { data: Partial<typeof invoice> }) => {
@@ -31,7 +31,11 @@ function stubPrisma() {
     },
     tenant: { update: vi.fn() },
     auditLog: { create: vi.fn() },
-    $transaction: vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => fn(this)),
+  };
+  client.$transaction = vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => fn(client));
+  return client as typeof client & {
+    invoice: { findFirst: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
+    subscription: { findFirst: ReturnType<typeof vi.fn>; create: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
   };
 }
 

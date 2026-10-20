@@ -64,3 +64,5 @@ jobs:
         run: pnpm lint
       - name: Unit tests
         run: pnpm test
+      - name: Integration tests (api)
+        run: pnpm --filter @eak/api test:integration

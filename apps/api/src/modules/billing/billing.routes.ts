@@ -1,5 +1,4 @@
 import { CreateInvoiceSchema, CreateInvoiceResultSchema, InvoiceSchema, envelope } from '@eak/shared';
-import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import { AuditService } from '../../lib/audit-service.js';
@@ -8,7 +7,9 @@ import { ok } from '../../lib/response.js';
 import { BillingService } from './billing.service.js';
 import { PakasirAdapter } from './pakasir.adapter.js';
 
-export async function registerBillingModule(app: FastifyInstance): Promise<void> {
+import type { ApiPlugin } from '../../plugin-types.js';
+
+export const registerBillingModule: ApiPlugin = async (app) => {
   const adapter = new PakasirAdapter(app.env);
   const audit = new AuditService(app.prisma);
   const service = new BillingService(app.prisma, adapter, audit, app.env);
@@ -77,4 +78,4 @@ export async function registerBillingModule(app: FastifyInstance): Promise<void>
       })));
     },
   );
-}
+};

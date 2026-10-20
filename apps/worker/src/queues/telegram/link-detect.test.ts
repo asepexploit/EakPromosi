@@ -27,7 +27,7 @@ describe('extractLinks', () => {
   });
 
   it('deduplicates across patterns', () => {
-    const links = extractLinks('https://t.me/foo and @foo again', true);
+    const links = extractLinks('https://t.me/fooBar and @fooBar again', true);
     expect(links).toHaveLength(1);
   });
 });

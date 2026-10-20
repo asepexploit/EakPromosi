@@ -1,4 +1,4 @@
-import { Queue, QueueEvents, Worker, type JobsOptions, type WorkerOptions } from 'bullmq';
+import { Queue, QueueEvents, Worker, type JobsOptions, type Processor, type WorkerOptions } from 'bullmq';
 
 import type { Env } from './env.js';
 import { createRedis, type RedisClient } from './redis.js';
@@ -64,12 +64,12 @@ export class QueueFactory {
     return qe;
   }
 
-  worker<T, R>(
+  worker<T = unknown, R = unknown>(
     name: QueueName,
-    processor: WorkerOptions extends { autorun?: boolean } ? Parameters<typeof createWorker<T, R>>[1] : never,
+    processor: Processor<T, R, string>,
     options: Omit<WorkerOptions, 'connection'> = {},
   ): Worker<T, R> {
-    return createWorker<T, R>(name, processor, { ...options, connection: this.connection });
+    return new Worker<T, R>(name, processor, { ...options, connection: this.connection });
   }
 
   async close(): Promise<void> {
@@ -77,12 +77,4 @@ export class QueueFactory {
     await Promise.all([...this.events.values()].map((e) => e.close()));
     await this.connection.quit();
   }
-}
-
-function createWorker<T, R>(
-  name: string,
-  processor: Parameters<typeof Worker<T, R>>[1],
-  options: WorkerOptions,
-): Worker<T, R> {
-  return new Worker<T, R>(name, processor, options);
 }

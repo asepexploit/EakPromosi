@@ -1,17 +1,18 @@
 import { AdminPlanInputSchema, AdminTenantSummarySchema, SuspendTenantSchema, envelope } from '@eak/shared';
 import { TenantStatus } from '@eak/db';
-import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import { AuditService } from '../../lib/audit-service.js';
 import { ok } from '../../lib/response.js';
+
+import type { ApiPlugin } from '../../plugin-types.js';
 
 /**
  * Platform admin panel. Routes live under `/admin/*` with
  * `requirePlatformAdmin` enforced on EVERY handler. See product-spec §16.
  * Every mutation here is audited (severity: info|warn|critical).
  */
-export async function registerAdminModule(app: FastifyInstance): Promise<void> {
+export const registerAdminModule: ApiPlugin = async (app) => {
   const audit = new AuditService(app.prisma);
 
   // Guard the entire admin surface
@@ -66,7 +67,6 @@ export async function registerAdminModule(app: FastifyInstance): Promise<void> {
         before: { status: row.status },
         after: { status: 'suspended' },
         severity: 'critical',
-        context: { reason: req.body.reason } as never,
       });
       void reply.status(204).send();
     },
@@ -108,4 +108,4 @@ export async function registerAdminModule(app: FastifyInstance): Promise<void> {
       paidAt: i.paidAt?.toISOString() ?? null,
     })));
   });
-}
+};

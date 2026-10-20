@@ -1,12 +1,13 @@
 import { GroupSchema, GroupMembershipSchema, CursorPageQuerySchema, CursorPageMetaSchema, envelope } from '@eak/shared';
-import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import { AuditService } from '../../lib/audit-service.js';
 import { decodeCursor, nextCursor } from '../../lib/pagination.js';
 import { okPage, ok } from '../../lib/response.js';
 
-export async function registerGroupsModule(app: FastifyInstance): Promise<void> {
+import type { ApiPlugin } from '../../plugin-types.js';
+
+export const registerGroupsModule: ApiPlugin = async (app) => {
   const audit = new AuditService(app.prisma);
 
   app.get(
@@ -137,4 +138,4 @@ export async function registerGroupsModule(app: FastifyInstance): Promise<void> 
       void reply.status(204).send();
     },
   );
-}
+};

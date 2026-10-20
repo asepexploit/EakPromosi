@@ -17,7 +17,7 @@
     "migrate:deploy": "prisma migrate deploy",
     "seed": "tsx seed/index.ts",
     "studio": "prisma studio",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "prisma": {
     "schema": "prisma/schema.prisma",

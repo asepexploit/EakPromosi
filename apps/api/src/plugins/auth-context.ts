@@ -8,7 +8,8 @@ import type { FastifyInstance } from 'fastify';
  * `req.user` and `req.tenant`. Routes opt in via `requireAuth`/`requireRole`
  * decorators rather than running auth globally.
  */
-export async function registerAuthContext(app: FastifyInstance): Promise<void> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function registerAuthContext(app: FastifyInstance<any, any, any, any, any>): Promise<void> {
   app.decorate('requireAuth', async function (req: Parameters<typeof hydrate>[1]) {
     await hydrate(app, req);
     if (!req.user) throw new AppError('UNAUTHORIZED', 'Autentikasi diperlukan');

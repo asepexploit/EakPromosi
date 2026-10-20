@@ -1,12 +1,13 @@
 import { DmRuleSchema, UpsertDmRuleSchema, envelope } from '@eak/shared';
-import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import { AuditService } from '../../lib/audit-service.js';
 import { PlanService } from '../../lib/plan-service.js';
 import { ok } from '../../lib/response.js';
 
-export async function registerDmModule(app: FastifyInstance): Promise<void> {
+import type { ApiPlugin } from '../../plugin-types.js';
+
+export const registerDmModule: ApiPlugin = async (app) => {
   const plans = new PlanService(app.prisma);
   const audit = new AuditService(app.prisma);
 
@@ -80,4 +81,4 @@ export async function registerDmModule(app: FastifyInstance): Promise<void> {
       void reply.status(204).send();
     },
   );
-}
+};

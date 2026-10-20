@@ -1,10 +1,11 @@
 import { SubscriptionSchema, envelope } from '@eak/shared';
-import type { FastifyInstance } from 'fastify';
 
 import { PlanService } from '../../lib/plan-service.js';
 import { ok } from '../../lib/response.js';
 
-export async function registerSubscriptionsModule(app: FastifyInstance): Promise<void> {
+import type { ApiPlugin } from '../../plugin-types.js';
+
+export const registerSubscriptionsModule: ApiPlugin = async (app) => {
   const plans = new PlanService(app.prisma);
 
   app.get(
@@ -45,4 +46,4 @@ export async function registerSubscriptionsModule(app: FastifyInstance): Promise
       });
     },
   );
-}
+};

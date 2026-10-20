@@ -1,10 +1,11 @@
 import { QUEUE_NAMES } from '@eak/config';
 import { MonitoringSnapshotSchema, envelope, type QueueName } from '@eak/shared';
-import type { FastifyInstance } from 'fastify';
 
 import { ok } from '../../lib/response.js';
 
-export async function registerMonitoringModule(app: FastifyInstance): Promise<void> {
+import type { ApiPlugin } from '../../plugin-types.js';
+
+export const registerMonitoringModule: ApiPlugin = async (app) => {
   app.get(
     '/snapshot',
     { preHandler: app.requireTenant, schema: { response: { 200: envelope(MonitoringSnapshotSchema) } } },
@@ -50,4 +51,4 @@ export async function registerMonitoringModule(app: FastifyInstance): Promise<vo
       void sub.quit();
     });
   });
-}
+};
