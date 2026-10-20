@@ -2,7 +2,7 @@
 
 Telegram Auto Promotion SaaS — fondasi awal.
 
-> Status: hanya struktur fondasi (dokumentasi + konfigurasi Claude Code + blueprint folder). Belum ada implementasi fitur aplikasi.
+> Status: fase fondasi. Sudah ada: skema Zod awal di `packages/shared`, kerangka konfigurasi `apps/web` (Vite/React/Tailwind/Radix) + design token, dan referensi desain UI di `docs/design/`. Belum ada implementasi fitur end-to-end; `apps/api`, `apps/worker`, `packages/db`, `packages/config` masih placeholder. Detail status di `CLAUDE.md §9`.
 
 ## Prasyarat (saat implementasi dimulai)
 
@@ -40,13 +40,13 @@ tests/      - integration & e2e
 
 ## Langkah selanjutnya
 
-Fondasi selesai. Tunggu instruksi untuk mulai implementasi (urutan yang disarankan):
+Urutan yang disarankan (✓ = sudah mulai):
 
 1. `packages/config` + `packages/db` (skema awal: `tenants`, `users`, `tenant_members`).
 2. `apps/api` bootstrap + auth + RBAC.
-3. `packages/shared` (schema untuk accounts/campaigns).
+3. `packages/shared` (schema lintas-service). ✓ skema awal sudah ada, masih bisa dilengkapi.
 4. `apps/worker` bootstrap + queue skeleton.
 5. Modul `accounts` (Telegram MTProto login) end-to-end.
 6. Modul `campaigns` + `broadcasts`.
 7. Modul `billing` + Pakasir.
-8. `apps/web`.
+8. `apps/web`. ✓ kerangka konfigurasi + design token sudah ada; komponen & halaman belum.
