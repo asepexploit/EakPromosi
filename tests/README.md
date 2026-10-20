@@ -1,32 +1,41 @@
 # tests/
 
-Integration & E2E test lintas-aplikasi. Unit test tetap di masing-masing paket (`apps/*/test/`, `packages/*/test/`).
+Integration + E2E yang berdiri sendiri di luar paket. Unit tests tetap di dekat kode (`foo.ts` ↔ `foo.test.ts`), lihat `.claude/rules/testing.md`.
 
-## Target struktur
+## Rencana
 
 ```
 tests/
   integration/
     api/
-      auth.test.ts
-      campaigns.test.ts
-      billing-webhook.test.ts
-    worker/
-      broadcast.test.ts
+      auth.test.ts         # register → login → me → logout dengan supertest + testcontainers
+      billing-webhook.test.ts  # end-to-end webhook Pakasir masuk, event tersimpan, worker memproses
   e2e/
-    web/
-      login.spec.ts
-      campaign-flow.spec.ts
+    playwright.config.ts
+    smoke/
+      login.spec.ts        # happy path register → dashboard
+      broadcast.spec.ts    # create broadcast → kirim stub → status terupdate
   factories/
-    tenant.factory.ts
-    account.factory.ts
-    campaign.factory.ts
-  fixtures/
-    pakasir/
+    user.ts
+    tenant.ts
+    plan.ts
 ```
 
-## Aturan
+Integration test di CI memakai service `postgres` + `redis` yang sudah disediakan di `.github/workflows/ci.yml`. E2E dijalankan nightly / di PR besar — tidak di setiap push (prototipe + butuh Playwright browsers).
 
-* Integration pakai Testcontainers (Postgres + Redis) atau `docker-compose.test.yml` yang akan dibuat.
-* E2E pakai Playwright, dijalankan terhadap `apps/web` + `apps/api` yang di-start lewat script.
-* Tidak ada panggilan network nyata ke Telegram / Pakasir di CI.
+## Konvensi
+
+- `describe('<Subject>', ...)` + `it('should <behavior>', ...)` (bahasa boleh Indonesia untuk domain spesifik: "menolak", "menerima").
+- Factory data via helper, bukan JSON fixture — lebih mudah di-refactor saat skema berubah.
+- **Tidak ada panggilan Telegram atau Pakasir nyata** di CI — gunakan mock atau sandbox env (`TG_TEST_*`, `PAKASIR_SANDBOX_*`).
+
+## Perintah
+
+```bash
+pnpm --filter @eak/api test     # unit
+pnpm test                       # semua workspace
+# integration (planned):
+pnpm --filter @eak/api test:integration
+# e2e (planned):
+pnpm --filter @eak/web test:e2e
+```

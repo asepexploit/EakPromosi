@@ -1,0 +1,16 @@
+:8080 {
+	root * /srv
+	encode gzip zstd
+	try_files {path} /index.html
+	file_server
+
+	header {
+		# Security basics; CSP tuned to Vite output + Google Fonts.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	@assets path *.js *.css *.woff2 *.svg *.png *.jpg *.ico
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+}

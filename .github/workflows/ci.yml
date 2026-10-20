@@ -1,0 +1,66 @@
+name: ci
+on:
+  push:
+    branches: [main, claude/**]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: eak
+          POSTGRES_PASSWORD: eak
+          POSTGRES_DB: eakpromosi
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U eak"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://eak:eak@localhost:5432/eakpromosi?schema=public
+      REDIS_URL: redis://localhost:6379
+      PUBLIC_WEB_ORIGIN: http://localhost:5173
+      CORS_ORIGINS: http://localhost:5173
+      SESSION_SECRET: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      CSRF_SECRET: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+      SESSION_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      SESSION_ENCRYPTION_KEY_VERSION: '1'
+      TELEGRAM_API_ID: '1'
+      TELEGRAM_API_HASH: dummy
+      PAKASIR_BASE_URL: https://sandbox.pakasir.local
+      PAKASIR_API_KEY: dummy
+      PAKASIR_PROJECT: dummy
+      PAKASIR_WEBHOOK_SECRET: dummy-webhook-secret-min-16-chars
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.3
+      - name: Install deps
+        run: pnpm install --frozen-lockfile=false
+      - name: Prisma generate
+        run: pnpm --filter @eak/db exec prisma generate
+      - name: Prisma migrate deploy
+        run: pnpm --filter @eak/db exec prisma migrate deploy
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Lint
+        run: pnpm lint
+      - name: Unit tests
+        run: pnpm test

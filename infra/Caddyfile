@@ -1,0 +1,17 @@
+{
+	email {$ACME_EMAIL}
+}
+
+# Public web (SPA) — Caddy terminates TLS and serves /srv
+app.example.com {
+	reverse_proxy web:8080
+}
+
+# API with WebSocket passthrough
+api.example.com {
+	reverse_proxy api:4000 {
+		header_up Host {host}
+		header_up X-Real-IP {remote}
+		header_up X-Forwarded-For {remote}
+	}
+}
