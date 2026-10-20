@@ -1,26 +1,36 @@
 {
   "name": "eakpromosi",
-  "private": true,
   "version": "0.0.0",
-  "description": "Telegram Auto Promotion SaaS (foundation only)",
-  "packageManager": "pnpm@9.0.0",
+  "private": true,
+  "description": "EakPromosi — Telegram Auto Promotion SaaS (monorepo)",
+  "packageManager": "pnpm@9.12.3",
   "engines": {
-    "node": ">=20.0.0 <21",
-    "pnpm": ">=9.0.0"
+    "node": "20"
   },
   "scripts": {
-    "lint": "pnpm -r --parallel lint",
-    "typecheck": "pnpm -r --parallel typecheck",
-    "test": "pnpm -r --parallel test",
-    "build": "pnpm -r build",
-    "db:migrate": "pnpm --filter @eak/db prisma migrate dev",
-    "db:generate": "pnpm --filter @eak/db prisma generate",
+    "build": "pnpm -r --filter=\"./apps/*\" --filter=\"./packages/*\" run build",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "eslint \"{apps,packages}/**/*.{ts,tsx}\" --cache",
+    "lint:fix": "pnpm lint --fix",
+    "format": "prettier --write \"{apps,packages}/**/*.{ts,tsx,md,json}\"",
+    "format:check": "prettier --check \"{apps,packages}/**/*.{ts,tsx,md,json}\"",
+    "test": "pnpm -r run test",
+    "db:generate": "pnpm --filter @eak/db exec prisma generate",
+    "db:migrate": "pnpm --filter @eak/db exec prisma migrate dev",
+    "db:deploy": "pnpm --filter @eak/db exec prisma migrate deploy",
+    "db:seed": "pnpm --filter @eak/db run seed",
     "dev:api": "pnpm --filter @eak/api dev",
+    "dev:worker": "pnpm --filter @eak/worker dev",
     "dev:web": "pnpm --filter @eak/web dev",
-    "dev:worker": "pnpm --filter @eak/worker dev"
+    "dev": "pnpm -r --parallel --filter=@eak/api --filter=@eak/worker --filter=@eak/web run dev"
   },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ]
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "8.11.0",
+    "@typescript-eslint/parser": "8.11.0",
+    "eslint": "9.13.0",
+    "eslint-config-prettier": "9.1.0",
+    "eslint-plugin-import": "2.31.0",
+    "prettier": "3.3.3",
+    "typescript": "5.6.3"
+  }
 }

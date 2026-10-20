@@ -1,0 +1,40 @@
+# ============================================================================
+# Dev-only compose. For production see infra/docker-compose.prod.yml.
+# ============================================================================
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: eak-postgres
+    environment:
+      POSTGRES_USER: eak
+      POSTGRES_PASSWORD: eak
+      POSTGRES_DB: eakpromosi
+    ports:
+      - '5432:5432'
+    volumes:
+      - eak-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U eak']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: eak-redis
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '6379:6379'
+    volumes:
+      - eak-redis:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  eak-postgres:
+  eak-redis:

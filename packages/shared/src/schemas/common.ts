@@ -10,6 +10,12 @@ export const CursorPageMetaSchema = z.object({
 });
 export type CursorPageMeta = z.infer<typeof CursorPageMetaSchema>;
 
+export const CursorPageQuerySchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+export type CursorPageQuery = z.infer<typeof CursorPageQuerySchema>;
+
 /** Response envelope sukses: `{ data, meta }` (lihat .claude/rules/api.md). */
 export const envelope = <T extends z.ZodTypeAny, M extends z.ZodTypeAny = z.ZodUndefined>(data: T, meta?: M) =>
   z.object({ data, meta: (meta ?? z.undefined()) as M });
@@ -32,3 +38,6 @@ export const PlanLimitCodeSchema = z.enum([
   'PLAN_FEATURE_DISABLED',
 ]);
 export type PlanLimitCode = z.infer<typeof PlanLimitCodeSchema>;
+
+export const TenantRoleSchema = z.enum(['owner', 'admin', 'operator', 'viewer']);
+export type TenantRole = z.infer<typeof TenantRoleSchema>;

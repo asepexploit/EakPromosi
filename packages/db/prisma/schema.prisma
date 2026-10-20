@@ -1,0 +1,785 @@
+// EakPromosi — Prisma schema
+// Non-negotiables (CLAUDE.md + .claude/product-spec.md):
+//   - subscription-only billing (NO wallet, credit, top-up).
+//   - groups unique by telegram_chat_id; memberships N:M.
+//   - admin panel via users.is_platform_admin (not a tenant role).
+//   - every business row carries tenant_id + indexes on it.
+//   - MTProto sessions stored encrypted (session_cipher).
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = []
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// Enums
+// ============================================================================
+
+enum TenantStatus {
+  active
+  suspended
+  deleted
+}
+
+enum TenantRole {
+  owner
+  admin
+  operator
+  viewer
+}
+
+enum SubscriptionStatus {
+  active
+  expired
+  pending
+  canceled
+}
+
+enum BillingPeriod {
+  monthly
+  yearly
+}
+
+enum InvoiceStatus {
+  pending
+  paid
+  expired
+  failed
+}
+
+enum WebhookStatus {
+  received
+  processed
+  failed
+  replayed
+}
+
+enum TelegramAccountStatus {
+  active
+  warming
+  flood_wait
+  disconnected
+  banned
+  error
+}
+
+enum AccountCapability {
+  discovery
+  broadcast
+  dm
+}
+
+enum DiscoverySourceStatus {
+  active
+  paused
+  errored
+}
+
+enum DiscoveredLinkKind {
+  public_username
+  private_invite
+  public_mention
+}
+
+enum DiscoveredLinkStatus {
+  pending
+  valid
+  invalid
+  duplicate
+  expired
+}
+
+enum GroupKind {
+  group
+  supergroup
+  channel
+}
+
+enum MembershipStatus {
+  member
+  left
+  kicked
+  banned
+  pending
+}
+
+enum JoinJobStatus {
+  queued
+  joining
+  joined
+  failed
+  approval_required
+  skipped
+}
+
+enum BroadcastStatus {
+  draft
+  queued
+  sending
+  completed
+  failed
+  paused
+  canceled
+}
+
+enum BroadcastTargetStatus {
+  queued
+  sending
+  sent
+  failed
+  skipped
+}
+
+enum CampaignStatus {
+  draft
+  scheduled
+  running
+  paused
+  completed
+  failed
+  archived
+}
+
+enum DmTriggerType {
+  keyword_match
+  new_dm
+  mention
+  group_join_event
+}
+
+enum DmResponseType {
+  template_text
+  template_media
+  tag_only
+  forward_to_bot
+}
+
+enum AuditSeverity {
+  info
+  warn
+  critical
+}
+
+// ============================================================================
+// Identity & tenants
+// ============================================================================
+
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  passwordHash      String   @map("password_hash")
+  displayName       String   @map("display_name")
+  timezone          String   @default("UTC")
+  locale            String   @default("id")
+  totpSecretCipher  String?  @map("totp_secret_cipher")
+  isPlatformAdmin   Boolean  @default(false) @map("is_platform_admin")
+  lastLoginAt       DateTime? @map("last_login_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  memberships  TenantMember[]
+  sessions     UserSession[]
+  auditLogs    AuditLog[]
+  supportTickets SupportTicket[]
+
+  @@map("users")
+}
+
+model UserSession {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  tokenHash     String   @unique @map("token_hash")
+  userAgent     String?  @map("user_agent")
+  ipAddress     String?  @map("ip_address")
+  lastSeenAt    DateTime @default(now()) @map("last_seen_at")
+  expiresAt     DateTime @map("expires_at")
+  revokedAt     DateTime? @map("revoked_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("user_sessions")
+}
+
+model Tenant {
+  id         String       @id @default(cuid())
+  name       String
+  slug       String       @unique
+  status     TenantStatus @default(active)
+  planId     String?      @map("plan_id")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+  deletedAt  DateTime?    @map("deleted_at")
+
+  plan                 Plan?               @relation(fields: [planId], references: [id])
+  members              TenantMember[]
+  subscriptions        Subscription[]
+  invoices             Invoice[]
+  telegramAccounts     TelegramAccount[]
+  discoverySources     DiscoverySource[]
+  discoveredLinks      DiscoveredLink[]
+  groups               Group[]
+  groupExclusions      GroupExclusion[]
+  broadcasts           Broadcast[]
+  broadcastTemplates   BroadcastTemplate[]
+  campaigns            Campaign[]
+  dmRules              DmRule[]
+  dmResponses          DmResponse[]
+  auditLogs            AuditLog[]
+  supportTickets       SupportTicket[]
+  webhookEvents        WebhookEvent[]
+  tenantBots           TenantBot[]
+  joinJobs             JoinJob[]
+  processedJobs        ProcessedJob[]
+
+  @@map("tenants")
+}
+
+model TenantMember {
+  id        String     @id @default(cuid())
+  tenantId  String     @map("tenant_id")
+  userId    String     @map("user_id")
+  role      TenantRole @default(viewer)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([userId])
+  @@map("tenant_members")
+}
+
+// ============================================================================
+// Billing
+// ============================================================================
+
+model Plan {
+  id                       String        @id @default(cuid())
+  code                     String        @unique // free | pro | business
+  name                     String
+  priceIdr                 Int           @map("price_idr")
+  period                   BillingPeriod @default(monthly)
+  maxTelegramAccounts      Int           @map("max_telegram_accounts")
+  maxConcurrentCampaigns   Int           @map("max_concurrent_campaigns")
+  maxBroadcastsPerDay      Int           @map("max_broadcasts_per_day")
+  maxDiscoverySources      Int           @map("max_discovery_sources")
+  autoDiscoveryEnabled     Boolean       @default(true) @map("auto_discovery_enabled")
+  autoJoinEnabled          Boolean       @default(true) @map("auto_join_enabled")
+  autoBroadcastEnabled     Boolean       @default(true) @map("auto_broadcast_enabled")
+  autoDmEnabled            Boolean       @default(true) @map("auto_dm_enabled")
+  isPublic                 Boolean       @default(true) @map("is_public")
+  sortOrder                Int           @default(0) @map("sort_order")
+  createdAt                DateTime      @default(now()) @map("created_at")
+  updatedAt                DateTime      @updatedAt @map("updated_at")
+
+  tenants       Tenant[]
+  subscriptions Subscription[]
+  invoices      Invoice[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id        String             @id @default(cuid())
+  tenantId  String             @map("tenant_id")
+  planId    String             @map("plan_id")
+  status    SubscriptionStatus @default(pending)
+  startsAt  DateTime           @map("starts_at")
+  endsAt    DateTime           @map("ends_at")
+  canceledAt DateTime?         @map("canceled_at")
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan   Plan   @relation(fields: [planId], references: [id])
+
+  @@index([tenantId, status])
+  @@index([endsAt])
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id              String        @id @default(cuid())
+  tenantId        String        @map("tenant_id")
+  planId          String        @map("plan_id")
+  pakasirInvoiceId String       @unique @map("pakasir_invoice_id")
+  amountIdr       Int           @map("amount_idr")
+  period          BillingPeriod
+  status          InvoiceStatus @default(pending)
+  checkoutUrl     String?       @map("checkout_url")
+  paidAt          DateTime?     @map("paid_at")
+  expiresAt       DateTime      @map("expires_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan   Plan   @relation(fields: [planId], references: [id])
+
+  @@index([tenantId, status])
+  @@index([status, expiresAt])
+  @@map("invoices")
+}
+
+model WebhookEvent {
+  id          String        @id @default(cuid())
+  tenantId    String?       @map("tenant_id")
+  provider    String        // "pakasir"
+  eventId     String        @map("event_id")
+  eventType   String        @map("event_type")
+  rawPayload  Json          @map("raw_payload")
+  signature   String
+  status      WebhookStatus @default(received)
+  processedAt DateTime?     @map("processed_at")
+  errorMessage String?      @map("error_message")
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@unique([provider, eventId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("webhook_events")
+}
+
+// ============================================================================
+// Telegram accounts & bots
+// ============================================================================
+
+model TelegramAccount {
+  id                   String                 @id @default(cuid())
+  tenantId             String                 @map("tenant_id")
+  telegramUserId       String?                @map("telegram_user_id")
+  phoneLast4           String                 @map("phone_last4")
+  phoneHash            String                 @map("phone_hash")
+  displayName          String                 @map("display_name")
+  username             String?
+  sessionCipher        String?                @map("session_cipher") // encrypted MTProto session
+  sessionKeyVersion    Int?                   @map("session_key_version")
+  twoFaCipher          String?                @map("two_fa_cipher") // encrypted 2FA password
+  deviceModel          String                 @map("device_model")
+  systemVersion        String                 @map("system_version")
+  appVersion           String                 @map("app_version")
+  status               TelegramAccountStatus  @default(disconnected)
+  capabilities         AccountCapability[]
+  disabledByPlanLimit  Boolean                @default(false) @map("disabled_by_plan_limit")
+  floodWaitUntil       DateTime?              @map("flood_wait_until")
+  lastError            String?                @map("last_error")
+  lastHealthCheckAt    DateTime?              @map("last_health_check_at")
+  warmupStartedAt      DateTime?              @map("warmup_started_at")
+  createdAt            DateTime               @default(now()) @map("created_at")
+  updatedAt            DateTime               @updatedAt @map("updated_at")
+
+  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberships  GroupMembership[]
+  joinJobs     JoinJob[]
+  broadcasts   Broadcast[]
+  dmResponses  DmResponse[]
+
+  @@unique([tenantId, telegramUserId])
+  @@index([tenantId, status])
+  @@map("telegram_accounts")
+}
+
+model TenantBot {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  username    String
+  tokenCipher String   @map("token_cipher")
+  tokenKeyVersion Int  @map("token_key_version")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, username])
+  @@map("tenant_bots")
+}
+
+// ============================================================================
+// Discovery
+// ============================================================================
+
+model DiscoverySource {
+  id             String                @id @default(cuid())
+  tenantId       String                @map("tenant_id")
+  name           String
+  telegramChatId String                @map("telegram_chat_id")
+  kind           String                // "group" | "channel" | "list"
+  mentionEnabled Boolean               @default(false) @map("mention_enabled")
+  dailyLimit     Int                   @default(500) @map("daily_limit")
+  status         DiscoverySourceStatus @default(active)
+  lastRunAt      DateTime?             @map("last_run_at")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  discoveredLinks DiscoveredLink[]
+
+  @@index([tenantId, status])
+  @@map("discovery_sources")
+}
+
+model DiscoveredLink {
+  id          String               @id @default(cuid())
+  tenantId    String               @map("tenant_id")
+  sourceId    String?              @map("source_id")
+  rawUrl      String               @map("raw_url")
+  normalized  String               // canonical form; unique per tenant
+  kind        DiscoveredLinkKind
+  status      DiscoveredLinkStatus @default(pending)
+  reason      String?
+  firstSeenAt DateTime             @default(now()) @map("first_seen_at")
+  lastSeenAt  DateTime             @default(now()) @map("last_seen_at")
+
+  tenant Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  source DiscoverySource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, normalized])
+  @@index([tenantId, status])
+  @@map("discovered_links")
+}
+
+// ============================================================================
+// Groups & memberships
+// ============================================================================
+
+model Group {
+  id                String    @id @default(cuid())
+  tenantId          String    @map("tenant_id")
+  telegramChatId    String    @map("telegram_chat_id")
+  title             String
+  username          String?
+  kind              GroupKind
+  memberCount       Int?      @map("member_count")
+  allowPromotion    Boolean   @default(false) @map("allow_promotion")
+  firstDiscoveredAt DateTime  @default(now()) @map("first_discovered_at")
+  lastSyncedAt      DateTime? @map("last_synced_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberships GroupMembership[]
+  exclusions  GroupExclusion[]
+  joinJobs    JoinJob[]
+  broadcastTargets BroadcastTarget[]
+
+  @@unique([tenantId, telegramChatId])
+  @@index([tenantId, allowPromotion])
+  @@map("groups")
+}
+
+model GroupMembership {
+  id             String           @id @default(cuid())
+  tenantId       String           @map("tenant_id")
+  groupId        String           @map("group_id")
+  accountId      String           @map("account_id")
+  status         MembershipStatus @default(pending)
+  joinedAt       DateTime?        @map("joined_at")
+  leftAt         DateTime?        @map("left_at")
+  lastCheckedAt  DateTime?        @map("last_checked_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  group   Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  account TelegramAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, accountId])
+  @@index([tenantId, status])
+  @@map("group_memberships")
+}
+
+model GroupExclusion {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  groupId   String   @map("group_id")
+  reason    String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  group  Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, groupId])
+  @@map("group_exclusions")
+}
+
+// ============================================================================
+// Join orchestration
+// ============================================================================
+
+model JoinJob {
+  id          String        @id @default(cuid())
+  tenantId    String        @map("tenant_id")
+  accountId   String        @map("account_id")
+  groupId     String?       @map("group_id") // nullable until resolved
+  rawTarget   String        @map("raw_target") // username / invite / id
+  status      JoinJobStatus @default(queued)
+  attempts    Int           @default(0)
+  lastError   String?       @map("last_error")
+  retryAfter  DateTime?     @map("retry_after")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  startedAt   DateTime?     @map("started_at")
+  finishedAt  DateTime?     @map("finished_at")
+
+  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account TelegramAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  group   Group?          @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status])
+  @@index([accountId, status])
+  @@map("join_jobs")
+}
+
+// ============================================================================
+// Broadcasts
+// ============================================================================
+
+model BroadcastTemplate {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  name      String
+  body      String
+  mediaUrl  String?  @map("media_url")
+  mediaKind String?  @map("media_kind") // photo | video | document | gif
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  broadcasts Broadcast[]
+
+  @@index([tenantId])
+  @@map("broadcast_templates")
+}
+
+model Broadcast {
+  id                String           @id @default(cuid())
+  tenantId          String           @map("tenant_id")
+  accountId         String           @map("account_id")
+  templateId        String?          @map("template_id")
+  campaignRunId     String?          @map("campaign_run_id")
+  title             String
+  body              String
+  mediaUrl          String?          @map("media_url")
+  mediaKind         String?          @map("media_kind")
+  status            BroadcastStatus  @default(draft)
+  scheduledAt       DateTime?        @map("scheduled_at")
+  startedAt         DateTime?        @map("started_at")
+  completedAt       DateTime?        @map("completed_at")
+  totalTargets      Int              @default(0) @map("total_targets")
+  sentCount         Int              @default(0) @map("sent_count")
+  failedCount       Int              @default(0) @map("failed_count")
+  minDelaySec       Int              @default(20) @map("min_delay_sec")
+  maxDelaySec       Int              @default(60) @map("max_delay_sec")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account     TelegramAccount    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  template    BroadcastTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  campaignRun CampaignRun?       @relation(fields: [campaignRunId], references: [id], onDelete: SetNull)
+  targets     BroadcastTarget[]
+
+  @@index([tenantId, status])
+  @@index([accountId, status])
+  @@index([campaignRunId])
+  @@map("broadcasts")
+}
+
+model BroadcastTarget {
+  id          String                @id @default(cuid())
+  tenantId    String                @map("tenant_id")
+  broadcastId String                @map("broadcast_id")
+  groupId     String                @map("group_id")
+  status      BroadcastTargetStatus @default(queued)
+  errorCode   String?               @map("error_code")
+  errorMessage String?              @map("error_message")
+  messageId   String?               @map("message_id") // telegram message id
+  attempts    Int                   @default(0)
+  sentAt      DateTime?             @map("sent_at")
+  createdAt   DateTime              @default(now()) @map("created_at")
+  updatedAt   DateTime              @updatedAt @map("updated_at")
+
+  broadcast Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  group     Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([broadcastId, groupId])
+  @@index([tenantId, status])
+  @@map("broadcast_targets")
+}
+
+// ============================================================================
+// Campaigns
+// ============================================================================
+
+model Campaign {
+  id          String         @id @default(cuid())
+  tenantId    String         @map("tenant_id")
+  name        String
+  description String?
+  goal        String?
+  status      CampaignStatus @default(draft)
+  startsAt    DateTime?      @map("starts_at")
+  endsAt      DateTime?      @map("ends_at")
+  templateId  String?        @map("template_id")
+  accountIds  String[]       @map("account_ids")
+  targetGroupIds String[]    @map("target_group_ids")
+  totalPlanned Int           @default(0) @map("total_planned")
+  totalSent    Int           @default(0) @map("total_sent")
+  totalFailed  Int           @default(0) @map("total_failed")
+  archivedAt   DateTime?     @map("archived_at")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  tenant    Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  schedules CampaignSchedule[]
+  runs      CampaignRun[]
+
+  @@index([tenantId, status])
+  @@map("campaigns")
+}
+
+model CampaignSchedule {
+  id         String   @id @default(cuid())
+  campaignId String   @map("campaign_id")
+  cron       String   // tenant-TZ-aware cron
+  timezone   String   @default("UTC")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("campaign_schedules")
+}
+
+model CampaignRun {
+  id         String    @id @default(cuid())
+  campaignId String    @map("campaign_id")
+  scheduledFor DateTime @map("scheduled_for")
+  startedAt  DateTime? @map("started_at")
+  finishedAt DateTime? @map("finished_at")
+  status     String    @default("pending") // pending|running|completed|failed
+  broadcasts Broadcast[]
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, status])
+  @@map("campaign_runs")
+}
+
+// ============================================================================
+// DM / Auto-reply
+// ============================================================================
+
+model DmRule {
+  id             String          @id @default(cuid())
+  tenantId       String          @map("tenant_id")
+  name           String
+  triggerType    DmTriggerType   @map("trigger_type")
+  keywords       String[]
+  responseType   DmResponseType  @map("response_type")
+  responseBody   String?         @map("response_body")
+  responseMedia  String?         @map("response_media")
+  cooldownMinutes Int            @default(60) @map("cooldown_minutes")
+  activeHoursStart Int?          @map("active_hours_start") // 0..23
+  activeHoursEnd   Int?          @map("active_hours_end")
+  timezone       String          @default("UTC")
+  isActive       Boolean         @default(true) @map("is_active")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  responses DmResponse[]
+
+  @@index([tenantId, isActive])
+  @@map("dm_rules")
+}
+
+model DmResponse {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  ruleId        String   @map("rule_id")
+  accountId     String   @map("account_id")
+  telegramPeer  String   @map("telegram_peer")
+  success       Boolean
+  errorCode     String?  @map("error_code")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rule    DmRule          @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  account TelegramAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([ruleId, telegramPeer])
+  @@map("dm_responses")
+}
+
+// ============================================================================
+// Audit, support, idempotency
+// ============================================================================
+
+model AuditLog {
+  id          String        @id @default(cuid())
+  tenantId    String?       @map("tenant_id")
+  actorUserId String?       @map("actor_user_id")
+  action      String
+  resource    String
+  resourceId  String?       @map("resource_id")
+  before      Json?
+  after       Json?
+  severity    AuditSeverity @default(info)
+  ipAddress   String?       @map("ip_address")
+  userAgent   String?       @map("user_agent")
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  actor  User?   @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@map("audit_logs")
+}
+
+model SupportTicket {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  userId     String   @map("user_id")
+  subject    String
+  body       String
+  status     String   @default("open") // open|in_progress|resolved|closed
+  priority   String   @default("normal")
+  assignedTo String?  @map("assigned_to")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@map("support_tickets")
+}
+
+model ProcessedJob {
+  id             String   @id @default(cuid())
+  tenantId       String?  @map("tenant_id")
+  queueName      String   @map("queue_name")
+  idempotencyKey String   @map("idempotency_key")
+  jobId          String?  @map("job_id")
+  result         Json?
+  processedAt    DateTime @default(now()) @map("processed_at")
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([queueName, idempotencyKey])
+  @@index([tenantId])
+  @@map("processed_jobs")
+}
