@@ -19,6 +19,7 @@ Telegram Auto Promotion SaaS — fondasi awal.
 * `docs/pakasir-integration.md` — kontrak Pakasir.
 * `docs/rbac.md` — matrix role.
 * `docs/runbook.md` — ops.
+* `docs/design/` — referensi desain UI `apps/web`: sistem desain (`ui-design-system.md`) + kode prototipe dashboard (`prototype/`, mockup acuan visual, bukan kode produksi).
 
 ## Struktur
 
