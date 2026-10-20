@@ -1,19 +1,48 @@
-import { useQuery } from '@tanstack/react-query';
-import { Building2 } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Building2, Pause, PlayCircle } from 'lucide-react';
+import { useState } from 'react';
 
 import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
+import { Dialog } from '../../components/ui/Dialog';
+import { Field, Input } from '../../components/ui/Input';
 import { Kpi } from '../../components/ui/Kpi';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { TBody, THead, Table, TMain, TSub } from '../../components/ui/Table';
 import { apiFetch } from '../../lib/api';
+import { useApiMutation } from '../../lib/mutation';
 import type { AdminTenantSummary } from '@eak/shared';
 
 export function AdminTenantsPage(): JSX.Element {
+  const qc = useQueryClient();
+  const [suspendTarget, setSuspendTarget] = useState<AdminTenantSummary | null>(null);
+  const [reason, setReason] = useState('');
+
   const { data = [], isLoading } = useQuery({
     queryKey: ['admin', 'tenants'],
     queryFn: () => apiFetch<AdminTenantSummary[]>('/admin/tenants'),
   });
+
+  const suspend = useApiMutation(
+    ({ id, reason: r }: { id: string; reason: string }) =>
+      apiFetch<void>(`/admin/tenants/${id}/suspend`, { method: 'POST', json: { reason: r } }),
+    {
+      successMessage: 'Tenant di-suspend.',
+      onSuccess: () => {
+        setSuspendTarget(null);
+        setReason('');
+        void qc.invalidateQueries({ queryKey: ['admin', 'tenants'] });
+      },
+    },
+  );
+  const activate = useApiMutation(
+    (id: string) => apiFetch<void>(`/admin/tenants/${id}/activate`, { method: 'POST' }),
+    {
+      successMessage: 'Tenant diaktifkan kembali.',
+      onSuccess: () => void qc.invalidateQueries({ queryKey: ['admin', 'tenants'] }),
+    },
+  );
 
   const totalMrr = data.reduce((s, t) => s + t.mrrIdr, 0);
   const activeCount = data.filter((t) => t.status === 'active').length;
@@ -44,6 +73,7 @@ export function AdminTenantsPage(): JSX.Element {
                   <th className="r">Akun</th>
                   <th className="r">MRR</th>
                   <th>Status</th>
+                  <th />
                 </tr>
               </THead>
               <TBody>
@@ -64,6 +94,17 @@ export function AdminTenantsPage(): JSX.Element {
                     <td>
                       <Badge tone={t.status === 'active' ? 'ok' : 'bad'}>{t.status}</Badge>
                     </td>
+                    <td className="r">
+                      {t.status === 'active' ? (
+                        <Button variant="danger" size="xs" onClick={() => setSuspendTarget(t)}>
+                          <Pause size={12} /> Suspend
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="xs" onClick={() => activate.mutate(t.id)} loading={activate.isPending}>
+                          <PlayCircle size={12} /> Activate
+                        </Button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </TBody>
@@ -71,6 +112,35 @@ export function AdminTenantsPage(): JSX.Element {
           )}
         </CardBody>
       </Card>
+
+      <Dialog
+        open={!!suspendTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSuspendTarget(null);
+            setReason('');
+          }
+        }}
+        title={`Suspend ${suspendTarget?.name ?? ''}?`}
+        description="Semua akun tenant akan dihentikan, operasi menjadi read-only sampai di-activate kembali."
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setSuspendTarget(null)}>Batal</Button>
+            <Button
+              variant="danger-solid"
+              disabled={reason.length < 5}
+              loading={suspend.isPending}
+              onClick={() => suspendTarget && suspend.mutate({ id: suspendTarget.id, reason })}
+            >
+              Suspend
+            </Button>
+          </>
+        }
+      >
+        <Field label="Alasan suspend" hint="Minimum 5 karakter, dicatat di audit log.">
+          <Input value={reason} onChange={(e) => setReason(e.target.value)} autoFocus />
+        </Field>
+      </Dialog>
     </div>
   );
 }

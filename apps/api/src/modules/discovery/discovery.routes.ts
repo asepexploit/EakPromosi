@@ -108,6 +108,30 @@ export const registerDiscoveryModule: ApiPlugin = async (app) => {
     },
   );
 
+  app.delete(
+    '/sources/:id',
+    {
+      preHandler: app.requireRole(['owner', 'admin']),
+      schema: { params: z.object({ id: z.string() }) },
+    },
+    async (req, reply) => {
+      const row = await app.prisma.discoverySource.findFirst({
+        where: { id: req.params.id, tenantId: req.tenant!.id },
+      });
+      if (!row) throw app.httpErrors.notFound();
+      await app.prisma.discoverySource.delete({ where: { id: row.id } });
+      await audit.log({
+        tenantId: req.tenant!.id,
+        actorUserId: req.user!.id,
+        action: 'discovery.source.delete',
+        resource: 'discovery_source',
+        resourceId: row.id,
+        before: { name: row.name },
+      });
+      void reply.status(204).send();
+    },
+  );
+
   app.get(
     '/links',
     {

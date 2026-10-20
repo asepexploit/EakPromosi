@@ -1,21 +1,24 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Database, Search } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Ban, Database, RotateCcw, Search } from 'lucide-react';
 import { useState } from 'react';
 
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
+import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { InputWithIcon } from '../../components/ui/Input';
 import { PageHeader } from '../../components/ui/PageHeader';
-import { TBody, THead, Table, TMain, TSub } from '../../components/ui/Table';
 import { Switch } from '../../components/ui/Switch';
+import { TBody, THead, Table, TMain, TSub } from '../../components/ui/Table';
 import { apiFetch } from '../../lib/api';
+import { useApiMutation } from '../../lib/mutation';
 import type { Group } from '@eak/shared';
 
 export function GroupsPage(): JSX.Element {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'allowed' | 'off'>('all');
 
@@ -31,11 +34,35 @@ export function GroupsPage(): JSX.Element {
       }),
   });
 
-  const togglePromotion = useMutation({
-    mutationFn: ({ id, allow }: { id: string; allow: boolean }) =>
-      apiFetch(`/groups/${id}/promotion`, { method: 'PATCH', json: { allowPromotion: allow } }),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['groups'] }),
-  });
+  const togglePromotion = useApiMutation(
+    ({ id, allow }: { id: string; allow: boolean }) =>
+      apiFetch<void>(`/groups/${id}/promotion`, { method: 'PATCH', json: { allowPromotion: allow } }),
+    { onSuccess: () => void qc.invalidateQueries({ queryKey: ['groups'] }) },
+  );
+
+  const exclude = useApiMutation(
+    ({ id, reason }: { id: string; reason: string }) =>
+      apiFetch<void>(`/groups/${id}/exclude`, { method: 'POST', json: { reason } }),
+    { successMessage: 'Grup di-exclude dari target broadcast.', onSuccess: () => void qc.invalidateQueries({ queryKey: ['groups'] }) },
+  );
+  const unexclude = useApiMutation(
+    (id: string) => apiFetch<void>(`/groups/${id}/exclude`, { method: 'DELETE' }),
+    { successMessage: 'Exclude dicabut.', onSuccess: () => void qc.invalidateQueries({ queryKey: ['groups'] }) },
+  );
+
+  const handleToggleExclude = async (g: Group): Promise<void> => {
+    if (g.excluded) {
+      unexclude.mutate(g.id);
+      return;
+    }
+    const ok = await confirm.confirm({
+      title: `Exclude "${g.title}"?`,
+      description: 'Grup ini tidak akan dipilih sebagai target broadcast meski allow_promotion=true.',
+      tone: 'danger',
+      confirmLabel: 'Exclude',
+    });
+    if (ok) exclude.mutate({ id: g.id, reason: 'Manual exclude dari UI' });
+  };
 
   const allowedCount = data.filter((g) => g.allowPromotion).length;
 
@@ -72,7 +99,7 @@ export function GroupsPage(): JSX.Element {
               placeholder="Cari nama / username…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              wrapClassName="w-72"
+              wrapClassName="w-full md:w-72"
             />
           }
         />
@@ -116,7 +143,10 @@ export function GroupsPage(): JSX.Element {
                       <TSub>{g.username ? `@${g.username}` : g.telegramChatId}</TSub>
                     </td>
                     <td>
-                      <Badge tone={g.type === 'channel' ? 'info' : g.type === 'supergroup' ? 'violet' : 'default'} dot={false}>
+                      <Badge
+                        tone={g.type === 'channel' ? 'info' : g.type === 'supergroup' ? 'violet' : 'default'}
+                        dot={false}
+                      >
                         {g.type}
                       </Badge>
                     </td>
@@ -132,8 +162,20 @@ export function GroupsPage(): JSX.Element {
                       </div>
                     </td>
                     <td className="r">
-                      <Button size="xs" variant="ghost">
-                        Detail
+                      <Button
+                        size="xs"
+                        variant={g.excluded ? 'outline' : 'ghost'}
+                        onClick={() => handleToggleExclude(g)}
+                      >
+                        {g.excluded ? (
+                          <>
+                            <RotateCcw size={12} /> Unexclude
+                          </>
+                        ) : (
+                          <>
+                            <Ban size={12} /> Exclude
+                          </>
+                        )}
                       </Button>
                     </td>
                   </tr>

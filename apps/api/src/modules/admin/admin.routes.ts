@@ -73,6 +73,27 @@ export const registerAdminModule: ApiPlugin = async (app) => {
   );
 
   app.post(
+    '/tenants/:id/activate',
+    { schema: { params: z.object({ id: z.string() }) } },
+    async (req, reply) => {
+      const row = await app.prisma.tenant.findUnique({ where: { id: req.params.id } });
+      if (!row) throw app.httpErrors.notFound();
+      await app.prisma.tenant.update({ where: { id: row.id }, data: { status: TenantStatus.active } });
+      await audit.log({
+        tenantId: row.id,
+        actorUserId: req.user!.id,
+        action: 'admin.tenant.activate',
+        resource: 'tenant',
+        resourceId: row.id,
+        before: { status: row.status },
+        after: { status: 'active' },
+        severity: 'warn',
+      });
+      void reply.status(204).send();
+    },
+  );
+
+  app.post(
     '/plans',
     { schema: { body: AdminPlanInputSchema } },
     async (req) => {

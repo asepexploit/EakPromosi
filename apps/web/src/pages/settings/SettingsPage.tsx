@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { KeyRound, User, Users } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { Alert } from '../../components/ui/Alert';
 import { Badge } from '../../components/ui/Badge';
@@ -137,7 +137,7 @@ export function SettingsPage(): JSX.Element {
   );
 }
 
-function Row({ label, value }: { label: string; value: React.ReactNode }): JSX.Element {
+function Row({ label, value }: { label: string; value: ReactNode }): JSX.Element {
   return (
     <div className="flex justify-between items-center py-2 border-b border-line-soft last:border-b-0">
       <span className="text-muted">{label}</span>

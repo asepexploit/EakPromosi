@@ -12,6 +12,7 @@ import {
   LinkIcon,
   LogOut,
   Megaphone,
+  Menu,
   MessageCircle,
   Receipt,
   Search,
@@ -20,8 +21,9 @@ import {
   Shield,
   Users,
   ListTodo,
+  X,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 import { apiFetch } from '../../lib/api';
@@ -29,7 +31,7 @@ import { cn } from '../../lib/cn';
 import { useAuthStore } from '../../stores/auth';
 import { Button } from '../ui/Button';
 import { Progress } from '../ui/Progress';
-import type { Subscription } from '@eak/shared';
+import type { AuthTenant, Subscription } from '@eak/shared';
 
 interface NavItem {
   to: string;
@@ -86,7 +88,6 @@ function findCrumb(pathname: string): { section: string; title: string } {
       }
     }
   }
-  if (pathname === '/') return { section: 'WORKSPACE', title: 'Dashboard' };
   return { section: 'WORKSPACE', title: 'Dashboard' };
 }
 
@@ -100,6 +101,12 @@ export function AppLayout({ children }: { children: ReactNode }): JSX.Element {
   const location = useLocation();
   const activeTenant = tenants.find((t) => t.id === activeTenantId) ?? tenants[0];
   const crumb = findCrumb(location.pathname);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Close drawer on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   const { data: sub } = useQuery({
     queryKey: ['subscriptions', 'current'],
@@ -121,15 +128,40 @@ export function AppLayout({ children }: { children: ReactNode }): JSX.Element {
     .toUpperCase();
 
   return (
-    <div className="min-h-screen bg-bg text-fg grid grid-cols-[252px_minmax(0,1fr)]">
-      <aside className="sticky top-0 self-start h-screen max-h-screen overflow-y-auto scrollbar-thin border-r border-line bg-sunk px-3.5 pt-4 pb-3.5 flex flex-col gap-4">
-        <Brand />
+    <div className="min-h-screen bg-bg text-fg lg:grid lg:grid-cols-[252px_minmax(0,1fr)]">
+      {/* Mobile backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-fg/40 backdrop-blur-sm z-30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden
+        />
+      )}
+
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-40 w-[260px] lg:w-auto lg:sticky lg:top-0 lg:self-start lg:h-screen lg:max-h-screen',
+          'overflow-y-auto scrollbar-thin border-r border-line bg-sunk px-3.5 pt-4 pb-3.5 flex flex-col gap-4',
+          'transition-transform duration-200 ease-snap',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+        )}
+      >
+        <div className="flex items-center justify-between">
+          <Brand />
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            className="lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Tutup menu"
+          >
+            <X size={16} />
+          </Button>
+        </div>
+
         {activeTenant && (
-          <WorkspaceSwitcher
-            tenants={tenants}
-            activeId={activeTenant.id}
-            onChange={setActiveTenant}
-          />
+          <WorkspaceSwitcher tenants={tenants} activeId={activeTenant.id} onChange={setActiveTenant} />
         )}
 
         <nav className="flex flex-col gap-5 flex-1 min-h-0">
@@ -195,28 +227,43 @@ export function AppLayout({ children }: { children: ReactNode }): JSX.Element {
 
       <main className="min-w-0 flex flex-col">
         <header className="sticky top-0 z-20 glass-top border-b border-line-soft">
-          <div className="flex items-center gap-3 px-7 py-3 min-h-[64px]">
+          <div className="flex items-center gap-2 md:gap-3 px-4 md:px-7 py-3 min-h-[64px]">
+            <Button
+              variant="ghost"
+              size="sm"
+              iconOnly
+              className="lg:hidden -ml-1"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Buka menu"
+            >
+              <Menu size={18} />
+            </Button>
             <div className="min-w-0 flex-1">
-              <div className="text-xs text-muted flex items-center gap-1.5">{crumb.section}</div>
+              <div className="text-[11px] text-muted font-medium hidden sm:block">{crumb.section}</div>
               <div className="text-base font-bold tracking-tight truncate">{crumb.title}</div>
             </div>
             <button
               type="button"
-              className="hidden md:flex items-center gap-2 h-9 pl-3 pr-2 min-w-[240px] rounded-lg border border-line bg-panel text-muted hover:border-tg/40 hover:shadow-focus-tg transition-all"
+              className="hidden md:flex items-center gap-2 h-9 pl-3 pr-2 min-w-[200px] rounded-lg border border-line bg-panel text-muted hover:border-tg/40 hover:shadow-focus-tg transition-all"
+              onClick={() => {
+                const q = prompt('Cari (akun, grup, campaign)…');
+                if (!q) return;
+                navigate(`/accounts?q=${encodeURIComponent(q)}`);
+              }}
             >
               <Search size={14} />
-              <span className="flex-1 text-left text-[13px]">Search anything…</span>
+              <span className="flex-1 text-left text-[13px]">Search…</span>
               <span className="inline-flex items-center gap-1 text-[10.5px] font-mono px-1.5 py-0.5 rounded border border-line bg-sunk text-muted">
                 <Command size={10} />K
               </span>
             </button>
             <button
               type="button"
-              className="relative w-9 h-9 grid place-items-center rounded-lg border border-line bg-panel text-muted hover:text-fg hover:bg-sunk transition-colors"
+              className="relative w-9 h-9 grid place-items-center rounded-lg border border-line bg-panel text-muted hover:text-fg hover:bg-sunk transition-colors flex-none"
               aria-label="Notifications"
+              onClick={() => navigate('/queue')}
             >
               <Bell size={16} />
-              <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-bad ring-2 ring-panel" />
             </button>
             <div
               className="w-9 h-9 rounded-lg grid place-items-center text-white text-xs font-bold flex-none"
@@ -225,13 +272,18 @@ export function AppLayout({ children }: { children: ReactNode }): JSX.Element {
             >
               {initials}
             </div>
-            <Button variant="ghost" size="sm" iconOnly onClick={handleLogout} aria-label="Logout">
+            <Button variant="ghost" size="sm" iconOnly onClick={handleLogout} aria-label="Logout" className="hidden sm:inline-flex">
               <LogOut size={16} />
             </Button>
           </div>
         </header>
 
-        <div className="px-7 py-7 pb-14 max-w-[1440px] w-full mx-auto animate-page-in">{children}</div>
+        <div
+          key={location.pathname}
+          className="px-4 md:px-7 py-6 md:py-7 pb-14 max-w-[1440px] w-full mx-auto animate-page-in"
+        >
+          {children}
+        </div>
       </main>
     </div>
   );
@@ -259,7 +311,7 @@ function WorkspaceSwitcher({
   activeId,
   onChange,
 }: {
-  tenants: ReturnType<typeof useAuthStore.getState>['tenants'];
+  tenants: AuthTenant[];
   activeId: string;
   onChange: (id: string) => void;
 }): JSX.Element {
@@ -297,6 +349,9 @@ function WorkspaceSwitcher({
 function PlanUsageCard({ sub, planCode }: { sub: Subscription; planCode: string }): JSX.Element {
   const navigate = useNavigate();
   const broadcastsToday = sub.usage.broadcastsToday;
+  // We don't have the exact plan limit here; approximate against 20 for the Free plan.
+  const assumedLimit = planCode === 'free' ? 20 : planCode === 'pro' ? 500 : 5000;
+  const pct = Math.min(100, (broadcastsToday / assumedLimit) * 100);
   return (
     <div
       className="relative overflow-hidden rounded-xl p-4 text-white shadow-tg-glow"
@@ -309,9 +364,11 @@ function PlanUsageCard({ sub, planCode }: { sub: Subscription; planCode: string 
       <p className="text-xl font-bold tracking-tight mt-0.5 mb-2.5">
         {planCode.toUpperCase()} <span className="text-[12px] font-medium opacity-80">· broadcast hari ini</span>
       </p>
-      <Progress value={(broadcastsToday / 20) * 100} tone="tg" className="h-1.5 bg-white/20" />
+      <Progress value={pct} tone="tg" className="h-1.5 bg-white/20" />
       <div className="flex justify-between items-center mt-2.5 text-[11.5px] opacity-90">
-        <span>{broadcastsToday} terkirim</span>
+        <span>
+          {broadcastsToday}/{assumedLimit} terkirim
+        </span>
         <button
           type="button"
           onClick={() => navigate('/billing/plans')}

@@ -1,16 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Plus, ShieldCheck, Users } from 'lucide-react';
+import { ArrowLeft, Plus, Power, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { useState } from 'react';
 
 import { Alert } from '../../components/ui/Alert';
 import { Badge, type BadgeTone } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
+import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Field, Input } from '../../components/ui/Input';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { apiFetch } from '../../lib/api';
 import { cn } from '../../lib/cn';
+import { useApiMutation } from '../../lib/mutation';
 import type { TelegramAccount, TelegramAccountStatus } from '@eak/shared';
 
 const STATUS_TONE: Record<TelegramAccountStatus, BadgeTone> = {
@@ -39,13 +41,13 @@ const AVATAR_PALETTE = [
 ];
 
 export function AccountsPage(): JSX.Element {
-  const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [phone, setPhone] = useState('');
   const [loginId, setLoginId] = useState('');
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [err, setErr] = useState<string | null>(null);
+  const qc = useQueryClient();
 
   const { data = [], isLoading } = useQuery({
     queryKey: ['accounts'],
@@ -145,7 +147,11 @@ export function AccountsPage(): JSX.Element {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {data.map((a, idx) => (
-            <AccountCard key={a.id} account={a} avatarGradient={AVATAR_PALETTE[idx % AVATAR_PALETTE.length] ?? AVATAR_PALETTE[0]!} />
+            <AccountCard
+              key={a.id}
+              account={a}
+              avatarGradient={AVATAR_PALETTE[idx % AVATAR_PALETTE.length] ?? AVATAR_PALETTE[0]!}
+            />
           ))}
           <button
             type="button"
@@ -164,6 +170,36 @@ export function AccountsPage(): JSX.Element {
 }
 
 function AccountCard({ account, avatarGradient }: { account: TelegramAccount; avatarGradient: string }): JSX.Element {
+  const qc = useQueryClient();
+  const confirm = useConfirm();
+
+  const disconnect = useApiMutation(() => apiFetch<void>(`/accounts/${account.id}/disconnect`, { method: 'POST' }), {
+    successMessage: 'Akun diputus.',
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['accounts'] }),
+  });
+  const remove = useApiMutation(() => apiFetch<void>(`/accounts/${account.id}`, { method: 'DELETE' }), {
+    successMessage: 'Akun dihapus.',
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['accounts'] }),
+  });
+
+  const handleDisconnect = async (): Promise<void> => {
+    const ok = await confirm.confirm({
+      title: `Putuskan "${account.displayName}"?`,
+      description: 'Session string tetap tersimpan — Anda bisa reconnect nanti.',
+      confirmLabel: 'Putuskan',
+    });
+    if (ok) disconnect.mutate();
+  };
+  const handleDelete = async (): Promise<void> => {
+    const ok = await confirm.confirm({
+      title: `Hapus "${account.displayName}" permanen?`,
+      description: 'Session string akan dihapus. Tidak bisa di-undo.',
+      tone: 'danger',
+      confirmLabel: 'Hapus permanen',
+    });
+    if (ok) remove.mutate();
+  };
+
   const initials = (account.displayName || 'U')
     .split(' ')
     .map((p) => p[0])
@@ -190,7 +226,12 @@ function AccountCard({ account, avatarGradient }: { account: TelegramAccount; av
             >
               {initials}
             </div>
-            <span className={cn('absolute -right-0.5 -bottom-0.5 w-3 h-3 rounded-full border-[2.5px] border-panel', statusDotTone)} />
+            <span
+              className={cn(
+                'absolute -right-0.5 -bottom-0.5 w-3 h-3 rounded-full border-[2.5px] border-panel',
+                statusDotTone,
+              )}
+            />
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold truncate">{account.displayName}</p>
@@ -206,7 +247,7 @@ function AccountCard({ account, avatarGradient }: { account: TelegramAccount; av
         <div className="grid grid-cols-3 gap-2">
           {[
             { label: 'Join', value: account.joinedGroupsCount },
-            { label: 'Sent hari ini', value: account.sentToday },
+            { label: 'Sent /hari', value: account.sentToday },
             { label: 'Kapabilitas', value: account.capabilities.length },
           ].map((s) => (
             <div key={s.label} className="bg-sunk rounded-lg px-2.5 py-2">
@@ -220,12 +261,19 @@ function AccountCard({ account, avatarGradient }: { account: TelegramAccount; av
           <p className="text-xs text-bad bg-bad/5 border border-bad/20 px-3 py-2 rounded-md">{account.lastError}</p>
         ) : null}
 
-        <div className="flex gap-2 pt-1">
-          <Button variant="outline" size="sm" className="flex-1">
-            Konfigurasi
+        <div className="flex gap-2 pt-1 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDisconnect}
+            disabled={account.status === 'disconnected' || disconnect.isPending}
+            loading={disconnect.isPending}
+            className="flex-1"
+          >
+            <Power size={13} /> {account.status === 'disconnected' ? 'Terputus' : 'Disconnect'}
           </Button>
-          <Button variant="ghost" size="sm">
-            Detail
+          <Button variant="danger" size="sm" iconOnly aria-label="Hapus akun" onClick={handleDelete}>
+            <Trash2 size={14} />
           </Button>
         </div>
       </div>
@@ -265,7 +313,12 @@ function LoginDialog(props: LoginDialogProps): JSX.Element {
         {!props.loginId ? (
           <>
             <Field label="Nomor telepon">
-              <Input placeholder="+6281234567890" value={props.phone} onChange={(e) => props.onPhoneChange(e.target.value)} autoFocus />
+              <Input
+                placeholder="+6281234567890"
+                value={props.phone}
+                onChange={(e) => props.onPhoneChange(e.target.value)}
+                autoFocus
+              />
             </Field>
             <div className="flex gap-2 pt-1">
               <Button variant="primary" onClick={props.onStart} disabled={!props.phone || props.submitting} loading={props.submitting}>
