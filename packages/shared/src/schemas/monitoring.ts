@@ -3,15 +3,15 @@ import { z } from 'zod';
 import { IdSchema, IsoDateTimeSchema } from './common';
 
 export const QueueNameSchema = z.enum([
-  'telegram:auth',
-  'telegram:join',
-  'telegram:broadcast',
-  'telegram:dm-reply',
-  'telegram:link-detect',
-  'telegram:membership-sync',
-  'billing:webhook',
-  'reports:aggregate',
-  'campaigns:scheduler',
+  'telegram-auth',
+  'telegram-join',
+  'telegram-broadcast',
+  'telegram-dm-reply',
+  'telegram-link-detect',
+  'telegram-membership-sync',
+  'billing-webhook',
+  'reports-aggregate',
+  'campaigns-scheduler',
 ]);
 export type QueueName = z.infer<typeof QueueNameSchema>;
 

@@ -8,15 +8,15 @@ import { createRedis, type RedisClient } from './redis.js';
  * process (or at least its own `Worker` instance). See .claude/rules/queue.md.
  */
 export const QUEUE_NAMES = {
-  telegramAuth: 'telegram:auth',
-  telegramJoin: 'telegram:join',
-  telegramBroadcast: 'telegram:broadcast',
-  telegramDmReply: 'telegram:dm-reply',
-  telegramLinkDetect: 'telegram:link-detect',
-  telegramMembershipSync: 'telegram:membership-sync',
-  billingWebhook: 'billing:webhook',
-  reportsAggregate: 'reports:aggregate',
-  campaignsScheduler: 'campaigns:scheduler',
+  telegramAuth: 'telegram-auth',
+  telegramJoin: 'telegram-join',
+  telegramBroadcast: 'telegram-broadcast',
+  telegramDmReply: 'telegram-dm-reply',
+  telegramLinkDetect: 'telegram-link-detect',
+  telegramMembershipSync: 'telegram-membership-sync',
+  billingWebhook: 'billing-webhook',
+  reportsAggregate: 'reports-aggregate',
+  campaignsScheduler: 'campaigns-scheduler',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];

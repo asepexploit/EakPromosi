@@ -772,14 +772,3 @@ ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_user_id_fkey" FORE
 
 -- AddForeignKey
 ALTER TABLE "processed_jobs" ADD CONSTRAINT "processed_jobs_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-┌─────────────────────────────────────────────────────────┐
-│  Update available 5.21.1 -> 8.0.0-rc.23                 │
-│                                                         │
-│  This is a major update - please follow the guide at    │
-│  https://pris.ly/d/major-version-upgrade                │
-│                                                         │
-│  Run the following to update                            │
-│    npm i --save-dev prisma@latest                       │
-│    npm i @prisma/client@latest                          │
-└─────────────────────────────────────────────────────────┘

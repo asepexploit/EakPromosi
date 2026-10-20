@@ -39,7 +39,7 @@ export interface BuildAppDeps {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function buildApp({ env, logger }: BuildAppDeps): Promise<FastifyInstance<any, any, any, any, any>> {
   const app = Fastify({
-    logger: logger as never,
+    loggerInstance: logger as never,
     trustProxy: env.TRUST_PROXY,
     disableRequestLogging: true, // we add our own access log via request-id plugin
     bodyLimit: 1_048_576, // 1MB default; webhook & upload routes override
