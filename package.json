@@ -1,0 +1,26 @@
+{
+  "name": "eakpromosi",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Telegram Auto Promotion SaaS (foundation only)",
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.0.0 <21",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "lint": "pnpm -r --parallel lint",
+    "typecheck": "pnpm -r --parallel typecheck",
+    "test": "pnpm -r --parallel test",
+    "build": "pnpm -r build",
+    "db:migrate": "pnpm --filter @eak/db prisma migrate dev",
+    "db:generate": "pnpm --filter @eak/db prisma generate",
+    "dev:api": "pnpm --filter @eak/api dev",
+    "dev:web": "pnpm --filter @eak/web dev",
+    "dev:worker": "pnpm --filter @eak/worker dev"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
