@@ -1,0 +1,101 @@
+<link rel="stylesheet" href="app.css">
+<div class="tb" id="tb-app">
+  <aside class="tb-side" id="tb-side" aria-label="Navigasi utama">
+    <div class="tb-brand">
+      <div class="tb-logo" data-icon="send"></div>
+      <div class="tb-brand-txt">
+        <div class="tb-brand-name">TeleBlast</div>
+        <div class="tb-brand-sub">Auto Promosi Telegram</div>
+      </div>
+    </div>
+    <button class="tb-ws" data-action="menu-user" data-source="profile">
+      <span class="tb-avatar sm" id="tb-ws-av">—</span>
+      <span class="tb-ws-meta">
+        <span class="tb-ws-name" id="tb-ws-name" data-source="profile" data-field="workspace" data-row="0">—</span>
+        <span class="tb-ws-plan"><span data-icon="crown"></span><span id="tb-ws-plan" data-source="profile" data-field="plan" data-row="0">—</span></span>
+      </span>
+      <span data-icon="chevron-down" class="muted"></span>
+    </button>
+    <nav class="tb-nav" id="tb-nav">
+      <div class="tb-nav-label">Utama</div>
+      <div class="tb-nav-group">
+        <button class="tb-nav-btn" data-nav="overview"><span data-icon="layout-dashboard"></span><span class="lbl">Overview</span></button>
+        <button class="tb-nav-btn" data-nav="live"><span data-icon="activity"></span><span class="lbl">Live Monitoring</span><span class="tb-count is-live" id="tb-nav-live">0</span></button>
+      </div>
+      <div class="tb-nav-label">Automation</div>
+      <div class="tb-nav-group">
+        <button class="tb-nav-btn" data-nav="detect"><span data-icon="scan"></span><span class="lbl">Auto-Detect Link</span><span class="tb-count" id="tb-nav-detect">0</span></button>
+        <button class="tb-nav-btn" data-nav="join"><span data-icon="user-plus"></span><span class="lbl">Auto-Join</span><span class="tb-count" id="tb-nav-join">0</span></button>
+        <button class="tb-nav-btn" data-nav="promo"><span data-icon="send"></span><span class="lbl">Auto Broadcast</span></button>
+        <button class="tb-nav-btn" data-nav="reply"><span data-icon="reply"></span><span class="lbl">Auto-Reply</span><span class="tb-count" id="tb-nav-reply">0</span></button>
+        <button class="tb-nav-btn" data-nav="campaigns"><span data-icon="megaphone"></span><span class="lbl">Campaign</span><span class="tb-count" id="tb-nav-camp">0</span></button>
+      </div>
+      <div class="tb-nav-label">Akun &amp; analitik</div>
+      <div class="tb-nav-group">
+        <button class="tb-nav-btn" data-nav="accounts"><span data-icon="smartphone"></span><span class="lbl">Akun Telegram</span><span class="tb-count" id="tb-nav-acc">0</span></button>
+        <button class="tb-nav-btn" data-nav="reports"><span data-icon="bar-chart"></span><span class="lbl">Statistik &amp; Laporan</span></button>
+        <button class="tb-nav-btn" data-nav="billing"><span data-icon="crown"></span><span class="lbl">Langganan &amp; Paket</span></button>
+        <button class="tb-nav-btn" data-nav="payments"><span data-icon="receipt"></span><span class="lbl">Riwayat Pembayaran</span><span class="tb-count" id="tb-nav-pay" hidden>0</span></button>
+        <button class="tb-nav-btn" data-nav="settings"><span data-icon="settings"></span><span class="lbl">Pengaturan</span></button>
+      </div>
+    </nav>
+    <div class="tb-side-foot">
+      <div class="tb-credit-card" data-source="profile">
+        <div class="lbl"><span data-icon="crown"></span>Langganan<span id="tb-side-st" style="margin-left:auto;background:rgba(255,255,255,.2);padding:1px 8px;border-radius:99px;font-size:11px;font-weight:600">—</span></div>
+        <div class="val" id="tb-side-plan">—</div>
+        <div class="bar"><i id="tb-side-bar" style="width:0%"></i></div>
+        <div class="row"><span id="tb-side-exp">—</span><button data-nav="billing">Kelola</button></div>
+      </div>
+    </div>
+    <div class="tb-side-mini">
+      <button class="tb-iconbtn" data-nav="billing" data-tip="Langganan"><span data-icon="crown"></span></button>
+    </div>
+  </aside>
+
+  <div class="tb-main">
+    <header class="tb-top">
+      <div class="tb-crumbs">
+        <div class="c1"><span id="tb-crumb-ws">Nusantara Digital</span><span data-icon="chevron-right"></span><span id="tb-crumb-sec">Utama</span></div>
+        <div class="c2" id="tb-crumb-title">Overview</div>
+      </div>
+      <button class="tb-search" data-action="cmdk" aria-label="Cari"><span data-icon="search"></span><span>Cari campaign, akun, menu…</span><kbd class="tb-kbd">Ctrl K</kbd></button>
+      <button class="tb-engine-pill" data-action="menu-engine" id="tb-engine-pill"><span class="tb-pulse" id="tb-engine-dot"></span><span class="lbl" id="tb-engine-lbl">Automation aktif</span><span data-icon="chevron-down" class="muted"></span></button>
+      <button class="tb-iconbtn tb-estop" data-action="emergency" aria-label="Stop darurat" data-tip="Stop darurat semua automation"><span data-icon="siren"></span></button>
+      <button class="tb-iconbtn" data-action="menu-notif" aria-label="Notifikasi" data-source="notifications"><span data-icon="bell"></span><span class="dot" id="tb-notif-dot" hidden></span></button>
+      <button class="tb-avatar" id="tb-avatar" data-action="menu-user" aria-label="Menu pengguna">—</button>
+    </header>
+
+    <main class="tb-view" id="tb-view">
+      <section id="overview" class="tb-page" data-page="overview" hidden></section>
+      <section id="live" class="tb-page" data-page="live" hidden></section>
+      <section id="promo" class="tb-page" data-page="promo" hidden></section>
+      <section id="detect" class="tb-page" data-page="detect" hidden></section>
+      <section id="join" class="tb-page" data-page="join" hidden></section>
+      <section id="reply" class="tb-page" data-page="reply" hidden></section>
+      <section id="campaigns" class="tb-page" data-page="campaigns" hidden></section>
+      <section id="accounts" class="tb-page" data-page="accounts" hidden></section>
+      <section id="reports" class="tb-page" data-page="reports" hidden></section>
+      <section id="billing" class="tb-page" data-page="billing" hidden></section>
+      <section id="payments" class="tb-page" data-page="payments" hidden></section>
+      <section id="settings" class="tb-page" data-page="settings" hidden></section>
+      <section id="tb-loading" class="tb-page">
+        <div class="tb-head"><div><div class="tb-skel" style="width:220px;height:26px"></div><div class="tb-skel mt-8" style="width:360px;max-width:80vw;height:14px"></div></div></div>
+        <div class="tb-skel" style="height:78px;border-radius:16px"></div>
+        <div class="tb-grid k4 mt-16"><div class="tb-skel" style="height:150px;border-radius:16px"></div><div class="tb-skel" style="height:150px;border-radius:16px"></div><div class="tb-skel" style="height:150px;border-radius:16px"></div><div class="tb-skel" style="height:150px;border-radius:16px"></div></div>
+        <div class="tb-grid main-side mt-16"><div class="tb-skel" style="height:340px;border-radius:16px"></div><div class="tb-skel" style="height:340px;border-radius:16px"></div></div>
+      </section>
+    </main>
+  </div>
+</div>
+<dialog class="tb-dlg" id="tb-dlg"></dialog>
+<div class="tb-pop" id="tb-pop" popover="auto"></div>
+<div class="tb-toasts" id="tb-toasts" popover="manual"></div>
+
+<script src="ui.js"></script>
+<script src="charts.js"></script>
+<script src="pages1.js"></script>
+<script src="pages2.js"></script>
+<script src="pages3.js"></script>
+<script src="pages4.js"></script>
+<script src="pages5.js"></script>
+<script src="app2.js"></script>
