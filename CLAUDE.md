@@ -64,6 +64,7 @@ packages/
   config/     # env loader, logger, redis & queue factories
 infra/        # docker-compose, deployment manifests
 docs/         # arsitektur, fitur, integrasi, runbook
+  design/     # referensi desain UI apps/web (sistem desain + prototipe)
 tests/        # e2e & integration (per aplikasi punya unit test sendiri)
 .claude/      # konfigurasi Claude Code
 ```
@@ -123,9 +124,15 @@ Package manager: **pnpm workspaces**. Node runtime: **20 LTS** (`.nvmrc`).
 6. Jika tugas menyentuh DB → wajib baca `.claude/rules/database.md`.
 7. Jika tugas menyentuh payment/webhook → wajib baca `.claude/rules/payment.md`.
 8. Jika tugas di panel admin → ingat: route `/admin/*`, middleware `requirePlatformAdmin`, audit wajib.
+9. Jika tugas menyentuh UI/tampilan `apps/web` → baca `docs/design/ui-design-system.md` (token, komponen, tata letak) dan lihat `docs/design/prototype/` (kode prototipe sebagai acuan visual; mockup, bukan kode produksi — jangan salin logika simulasinya).
 
 ---
 
 ## 9. Status Saat Ini
 
-Repository baru. Fondasi dibuat; **tidak ada implementasi fitur**. Semua direktori aplikasi masih kosong (hanya `README.md` placeholder). Langkah berikutnya menunggu instruksi eksplisit dari pengguna.
+Fase fondasi. Yang sudah ada di branch `feat/web-ui-foundation`:
+* `packages/shared` — skema Zod awal (account, discovery, group, campaign, billing, dashboard).
+* `apps/web` — konfigurasi kerangka (Vite/React/Tailwind/Radix) + design token. Belum ada komponen/halaman, belum di-`pnpm install`/di-test.
+* `docs/design/` — referensi desain UI (sistem desain + kode prototipe dashboard sebagai acuan).
+
+Direktori aplikasi lain masih placeholder. Langkah berikutnya menunggu instruksi eksplisit dari pengguna.

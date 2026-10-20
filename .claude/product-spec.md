@@ -5,6 +5,8 @@ Semua rules, skills, commands, dan docs lain merujuk ke sini. Jika ada konflik, 
 
 > Model billing: **subscription-only** (paket Free / Pro / Business). TIDAK ADA wallet, top-up kredit, atau pemotongan saldo per operasi. Batas pemakaian = batas paket (jumlah akun & kuota operasi), bukan kuota credit.
 
+> Referensi tampilan: `docs/design/ui-design-system.md` (sistem desain) + `docs/design/prototype/` (kode prototipe sebagai acuan visual `apps/web`; mockup data dummy, bukan kode produksi).
+
 ---
 
 ## 1. Struktur Menu Aplikasi

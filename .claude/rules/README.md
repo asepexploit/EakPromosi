@@ -15,3 +15,5 @@ Rules modular. Muat **hanya** yang relevan untuk tugas aktif.
 | `payment.md` | **Wajib** untuk apa pun yang menyentuh Pakasir/subscriptions. |
 | `testing.md` | Menulis / memperbarui test. |
 | `deployment.md` | Dockerfile, compose, env, release. |
+
+**Referensi desain UI** (bukan rule, tapi wajib dilihat untuk tugas `apps/web`): `docs/design/ui-design-system.md` + `docs/design/prototype/`.
