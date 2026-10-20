@@ -1,10 +1,12 @@
 import { useMutation } from '@tanstack/react-query';
+import { Send } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
-import { Card, CardBody, CardHeader } from '../../components/ui/Card';
-import { Input } from '../../components/ui/Input';
+import { Card, CardBody } from '../../components/ui/Card';
+import { Field, Input } from '../../components/ui/Input';
 import { ApiError, apiFetch } from '../../lib/api';
 import { useAuthStore } from '../../stores/auth';
 import type { Register, SessionBundle } from '@eak/shared';
@@ -26,43 +28,68 @@ export function RegisterPage(): JSX.Element {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg px-4 py-8">
-      <Card className="w-full max-w-md">
-        <CardHeader title="Daftar EakPromosi" subtitle="Tenant pertama otomatis mendapat paket Free" />
-        <CardBody>
-          <form
-            className="space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setErr(null);
-              register.mutate(form);
-            }}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-50"
+        style={{
+          background: 'radial-gradient(60% 50% at 50% 0%, rgb(124 108 242 / 0.1), transparent 70%)',
+        }}
+      />
+      <div className="relative w-full max-w-md">
+        <div className="flex items-center gap-2.5 mb-6 justify-center">
+          <div
+            className="w-11 h-11 rounded-xl grid place-items-center text-white shadow-tg"
+            style={{ background: 'linear-gradient(140deg, #37BBFE 0%, #1E88D6 100%)' }}
           >
-            <label className="block">
-              <span className="text-xs text-muted">Nama Tenant / Organisasi</span>
-              <Input value={form.tenantName} onChange={(e) => setForm({ ...form, tenantName: e.target.value })} required />
-            </label>
-            <label className="block">
-              <span className="text-xs text-muted">Nama Anda</span>
-              <Input value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} required />
-            </label>
-            <label className="block">
-              <span className="text-xs text-muted">Email</span>
-              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-            </label>
-            <label className="block">
-              <span className="text-xs text-muted">Password (min 10 karakter)</span>
-              <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
-            </label>
-            {err && <p className="text-xs text-bad">{err}</p>}
-            <Button type="submit" className="w-full" disabled={register.isPending}>
-              {register.isPending ? 'Memproses…' : 'Buat Akun'}
-            </Button>
-          </form>
-          <p className="text-xs text-muted mt-4 text-center">
-            Sudah punya akun? <Link to="/login" className="text-tg-deep hover:underline">Masuk</Link>
-          </p>
-        </CardBody>
-      </Card>
+            <Send size={18} strokeWidth={2.4} />
+          </div>
+          <div>
+            <p className="font-bold text-lg leading-tight">EakPromosi</p>
+            <p className="text-[11.5px] text-muted">Mulai gratis dengan paket Free</p>
+          </div>
+        </div>
+        <Card>
+          <CardBody className="p-7">
+            <h1 className="text-xl font-bold tracking-tight mb-1">Buat Akun</h1>
+            <p className="text-sm text-muted mb-6">Tenant pertama otomatis mendapat paket Free (30 hari).</p>
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setErr(null);
+                register.mutate(form);
+              }}
+            >
+              <Field label="Nama Tenant / Organisasi">
+                <Input value={form.tenantName} onChange={(e) => setForm({ ...form, tenantName: e.target.value })} required />
+              </Field>
+              <Field label="Nama Anda">
+                <Input value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} required />
+              </Field>
+              <Field label="Email">
+                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+              </Field>
+              <Field label="Password (min 10 karakter)">
+                <Input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  required
+                />
+              </Field>
+              {err ? <Alert tone="bad" title={err} /> : null}
+              <Button type="submit" variant="primary" className="w-full" loading={register.isPending}>
+                Daftar Gratis
+              </Button>
+            </form>
+            <p className="text-xs text-muted mt-5 text-center">
+              Sudah punya akun?{' '}
+              <Link to="/login" className="text-tg-ink font-semibold hover:underline">
+                Masuk
+              </Link>
+            </p>
+          </CardBody>
+        </Card>
+      </div>
     </div>
   );
 }

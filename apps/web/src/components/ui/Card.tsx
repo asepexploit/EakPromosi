@@ -2,26 +2,61 @@ import type { ReactNode } from 'react';
 
 import { cn } from '../../lib/cn';
 
-export function Card({ className, children }: { className?: string; children: ReactNode }): JSX.Element {
+interface CardProps {
+  className?: string;
+  interactive?: boolean;
+  children: ReactNode;
+}
+
+export function Card({ className, interactive, children }: CardProps): JSX.Element {
   return (
-    <div className={cn('bg-panel border border-line rounded-xl shadow-card', className)}>
+    <div
+      className={cn(
+        'bg-panel border border-line rounded-lg shadow-card min-w-0 relative',
+        interactive && 'transition-all duration-200 ease-snap hover:border-tg/30 hover:shadow-soft',
+        className,
+      )}
+    >
       {children}
     </div>
   );
 }
 
-export function CardHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }): JSX.Element {
+interface CardHeaderProps {
+  title: ReactNode;
+  subtitle?: ReactNode;
+  actions?: ReactNode;
+  icon?: ReactNode;
+  className?: string;
+}
+
+export function CardHeader({ title, subtitle, actions, icon, className }: CardHeaderProps): JSX.Element {
   return (
-    <div className="flex items-start justify-between gap-4 px-5 py-4 border-b border-line">
-      <div>
-        <h2 className="text-base font-semibold">{title}</h2>
-        {subtitle && <p className="text-xs text-muted mt-0.5">{subtitle}</p>}
+    <div className={cn('flex items-start justify-between gap-3 px-5 pt-5', className)}>
+      <div className="min-w-0 flex items-start gap-3">
+        {icon ? (
+          <div className="w-8 h-8 rounded-lg bg-tg/10 text-tg-ink grid place-items-center flex-none mt-0.5">
+            {icon}
+          </div>
+        ) : null}
+        <div className="min-w-0">
+          <h3 className="text-[14.5px] font-semibold tracking-tight flex items-center gap-2 leading-tight">{title}</h3>
+          {subtitle ? <p className="text-xs text-muted mt-1">{subtitle}</p> : null}
+        </div>
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions ? <div className="flex items-center gap-2 flex-wrap">{actions}</div> : null}
     </div>
   );
 }
 
 export function CardBody({ className, children }: { className?: string; children: ReactNode }): JSX.Element {
-  return <div className={cn('p-5', className)}>{children}</div>;
+  return <div className={cn('px-5 pb-5 pt-4', className)}>{children}</div>;
+}
+
+export function CardFooter({ className, children }: { className?: string; children: ReactNode }): JSX.Element {
+  return (
+    <div className={cn('px-5 py-3 border-t border-line-soft flex items-center justify-between gap-2.5', className)}>
+      {children}
+    </div>
+  );
 }

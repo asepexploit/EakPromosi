@@ -7,12 +7,16 @@
   --bg: 248 250 252;
   --panel: 255 255 255;
   --sunk: 243 246 249;
+  --hover: 15 23 42;         /* used with /4.5 alpha */
+  --press: 15 23 42;         /* used with /8 alpha */
   --fg: 15 23 42;
   --muted: 100 116 139;
   --line: 226 232 240;
+  --line-soft: 226 232 240;
   --tg: 42 171 238;
   --tg-ink: 21 120 189;
   --tg-deep: 30 136 214;
+  --tg-glow: 76 195 251;
   --ok: 22 163 74;
   --warn: 217 119 6;
   --bad: 220 38 38;
@@ -23,9 +27,12 @@
   --bg: 10 15 23;
   --panel: 16 23 34;
   --sunk: 13 19 29;
+  --hover: 226 232 240;
+  --press: 226 232 240;
   --fg: 226 232 240;
   --muted: 148 163 184;
   --line: 35 47 64;
+  --line-soft: 35 47 64;
   --tg-ink: 125 208 251;
   --ok: 74 222 128;
   --warn: 251 191 36;
@@ -36,19 +43,46 @@
 
 @layer base {
   html { -webkit-font-smoothing: antialiased; }
-  body { @apply bg-bg text-fg font-sans text-sm; letter-spacing: -0.006em; }
+  body {
+    @apply bg-bg text-fg font-sans text-sm;
+    letter-spacing: -0.006em;
+  }
   :focus-visible { outline: 2px solid rgb(var(--tg)); outline-offset: 2px; }
+  ::selection { background: rgb(var(--tg) / 0.25); }
+  h1, h2, h3, h4 { letter-spacing: -0.02em; }
 }
 
 @layer utilities {
   .tabular { font-variant-numeric: tabular-nums; }
+  .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: rgb(var(--muted) / 0.3); border-radius: 999px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+
   .skeleton {
     background: linear-gradient(90deg, rgb(var(--fg) / 0.06) 0%, rgb(var(--fg) / 0.03) 50%, rgb(var(--fg) / 0.06) 100%);
     background-size: 200% 100%;
     @apply animate-shimmer rounded-lg;
   }
+
+  .glass-top {
+    background: rgb(var(--bg) / 0.82);
+    backdrop-filter: saturate(1.6) blur(14px);
+    -webkit-backdrop-filter: saturate(1.6) blur(14px);
+  }
+
+  /* Telegram chat preview backdrop */
+  .tg-chat-bg {
+    background-color: rgb(143 185 168 / 0.22);
+    background-image:
+      radial-gradient(circle at 20% 20%, rgb(201 228 180 / 0.35) 0%, transparent 45%),
+      radial-gradient(circle at 80% 70%, rgb(159 211 232 / 0.35) 0%, transparent 45%);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

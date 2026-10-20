@@ -1,10 +1,11 @@
-import { Building2, CreditCard, Receipt } from 'lucide-react';
+import { Building2, CreditCard, LogOut, Receipt, Shield } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 import { apiFetch } from '../../lib/api';
 import { cn } from '../../lib/cn';
 import { useAuthStore } from '../../stores/auth';
+import { Button } from '../ui/Button';
 
 const ITEMS = [
   { to: '/admin/tenants', label: 'Tenants', icon: Building2 },
@@ -14,44 +15,79 @@ const ITEMS = [
 
 export function AdminLayout({ children }: { children: ReactNode }): JSX.Element {
   const clear = useAuthStore((s) => s.clear);
-  const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const current = ITEMS.find((i) => location.pathname.startsWith(i.to))?.label ?? 'Overview';
   const handleLogout = async (): Promise<void> => {
     await apiFetch('/auth/logout', { method: 'POST' }).catch(() => undefined);
     clear();
     navigate('/login');
   };
+
   return (
-    <div className="min-h-screen flex bg-bg text-fg">
-      <aside className="w-56 border-r border-line bg-panel flex flex-col">
-        <div className="p-5 border-b border-line">
-          <Link to="/admin" className="text-sm font-semibold text-violet">Admin Panel</Link>
-          <p className="text-[10px] text-muted mt-1">EakPromosi · platform</p>
-        </div>
-        <nav className="flex-1 p-3 space-y-0.5">
+    <div className="min-h-screen bg-bg text-fg grid grid-cols-[232px_minmax(0,1fr)]">
+      <aside className="sticky top-0 self-start h-screen border-r border-line bg-sunk px-3.5 pt-4 pb-3.5 flex flex-col gap-4">
+        <Link to="/admin" className="flex items-center gap-2.5 px-1.5">
+          <div className="w-9 h-9 rounded-xl grid place-items-center bg-violet/15 text-violet">
+            <Shield size={16} strokeWidth={2.4} />
+          </div>
+          <div className="min-w-0">
+            <p className="font-bold text-[15.5px] leading-tight tracking-tight text-violet">Admin Panel</p>
+            <p className="text-[11.5px] text-muted">EakPromosi · platform</p>
+          </div>
+        </Link>
+
+        <nav className="flex flex-col gap-0.5 flex-1">
           {ITEMS.map((i) => (
             <NavLink
               key={i.to}
               to={i.to}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors',
-                  isActive ? 'bg-violet/10 text-violet font-medium' : 'text-fg hover:bg-sunk',
+                  'relative flex items-center gap-2.5 w-full px-2.5 py-2 rounded-md text-[13.5px] font-medium transition-all duration-150 ease-snap',
+                  isActive
+                    ? 'bg-panel text-fg shadow-card ring-1 ring-line'
+                    : 'text-muted hover:bg-fg/[0.045] hover:text-fg',
                 )
               }
             >
-              <i.icon size={16} /> {i.label}
+              {({ isActive }) => (
+                <>
+                  {isActive && <span className="absolute -left-[14px] top-2 bottom-2 w-[3px] rounded-r bg-violet" />}
+                  <i.icon size={16} className={cn(isActive && 'text-violet')} />
+                  {i.label}
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
-        <div className="p-3 border-t border-line text-xs flex items-center justify-between">
-          <span className="truncate">{user?.email}</span>
-          <button type="button" className="text-muted hover:text-fg" onClick={handleLogout}>
-            Keluar
-          </button>
+
+        <div className="mt-auto p-3 border border-line rounded-lg bg-panel">
+          <p className="text-xs text-muted">Signed in as</p>
+          <p className="text-[13px] font-semibold truncate">{user?.email}</p>
+          <div className="flex items-center justify-between mt-2.5">
+            <Button variant="outline" size="xs" onClick={() => navigate('/')}>
+              Keluar panel
+            </Button>
+            <Button variant="ghost" size="xs" iconOnly onClick={handleLogout} aria-label="Logout">
+              <LogOut size={14} />
+            </Button>
+          </div>
         </div>
       </aside>
-      <main className="flex-1 overflow-y-auto p-6">{children}</main>
+
+      <main className="min-w-0 flex flex-col">
+        <header className="sticky top-0 z-20 glass-top border-b border-line-soft">
+          <div className="flex items-center gap-3 px-7 py-3 min-h-[64px]">
+            <div className="min-w-0 flex-1">
+              <div className="text-xs text-violet font-semibold">ADMIN</div>
+              <div className="text-base font-bold tracking-tight">{current}</div>
+            </div>
+          </div>
+        </header>
+        <div className="px-7 py-7 pb-14 max-w-[1440px] w-full mx-auto animate-page-in">{children}</div>
+      </main>
     </div>
   );
 }
