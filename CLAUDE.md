@@ -25,7 +25,7 @@ ADMIN (panel terpisah) — 15 Admin Panel
 
 ## 2. Prinsip Operasional untuk Claude
 
-* **Jangan membuat implementasi fitur aplikasi** sampai pengguna meminta. Fase saat ini: hanya fondasi (dokumentasi + konfigurasi `.claude/` + blueprint folder).
+* **Jangan membuat implementasi fitur aplikasi** sampai pengguna meminta. Status terkini ada di §9 (fase fondasi: baru skema `packages/shared` + kerangka `apps/web` + referensi desain; sisanya placeholder).
 * **Sumber kebenaran produk:** `.claude/product-spec.md`. Baca sebelum merancang modul apa pun.
 * Baca `CLAUDE.md` → muat rule yang relevan dari `.claude/rules/` sebelum menulis kode.
 * Patuhi **STANDAR WAJIB**: TypeScript strict, separation of concerns, SOLID, secure-by-default, validasi input, RBAC, isolasi data per-tenant, structured error handling, logging, idempotent jobs, retry aman, DB migrations, testing, env vars tanpa hardcoded secrets.

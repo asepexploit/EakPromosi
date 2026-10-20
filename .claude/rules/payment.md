@@ -19,7 +19,7 @@
 * Verifikasi signature (HMAC) + timestamp window (5 menit) + idempotency key.
 * Simpan raw payload (`webhook_events` table) sebelum memproses.
 * Proses via queue `billing:webhook` (bukan di request thread) agar Pakasir dapat 200 cepat.
-* Transisi status: `pending → paid | failed | expired`. Hanya `pending → paid` yang menambah credit/aktivasi paket.
+* Transisi status: `pending → paid | failed | expired`. Hanya `pending → paid` yang memicu aktivasi/perpanjangan paket. (Subscription-only — tidak ada credit/saldo yang ditambah.)
 
 ## Idempotency
 
