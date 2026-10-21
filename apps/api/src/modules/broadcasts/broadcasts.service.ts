@@ -2,8 +2,8 @@ import { AppError, QUEUE_NAMES, type QueueFactory } from '@eak/config';
 import { type PrismaClient, BroadcastStatus } from '@eak/db';
 import type { CreateBroadcast } from '@eak/shared';
 
-import { AuditService } from '../../lib/audit-service.js';
-import { PlanService } from '../../lib/plan-service.js';
+import type { AuditService } from '../../lib/audit-service.js';
+import type { PlanService } from '../../lib/plan-service.js';
 
 export class BroadcastsService {
   constructor(
@@ -43,7 +43,7 @@ export class BroadcastsService {
           mediaKind: input.mediaKind,
           scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : null,
           totalTargets: groups.length,
-          status: input.scheduledAt ? BroadcastStatus.queued : BroadcastStatus.queued,
+          status: BroadcastStatus.queued,
           minDelaySec: input.minDelaySec,
           maxDelaySec: input.maxDelaySec,
         },
@@ -78,6 +78,16 @@ export class BroadcastsService {
     if (!b) throw new AppError('NOT_FOUND', 'Broadcast tidak ditemukan');
     const next = action === 'pause' ? BroadcastStatus.paused : action === 'resume' ? BroadcastStatus.queued : BroadcastStatus.canceled;
     await this.prisma.broadcast.update({ where: { id: b.id }, data: { status: next } });
+    if (action === 'resume') {
+      // Re-enqueue so the worker picks up remaining `queued` targets. Using a
+      // timestamp-suffixed jobId prevents BullMQ dedup against the original
+      // broadcast job (which may already be in a terminal state).
+      await this.queues.queue(QUEUE_NAMES.telegramBroadcast).add(
+        'broadcast.resume',
+        { tenantId, broadcastId: b.id },
+        { jobId: `broadcast:${b.id}:resume:${Date.now()}` },
+      );
+    }
     await this.audit.log({
       tenantId,
       actorUserId,

@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { IdSchema, IsoDateTimeSchema } from './common';
+
+import { IdSchema, IsoDateTimeSchema } from './common.js';
 
 /** Modul 02 — status koneksi akun (product-spec §3). */
 export const TelegramAccountStatusSchema = z.enum(['active', 'warming', 'flood_wait', 'disconnected', 'banned', 'error']);
@@ -32,9 +33,20 @@ export const UpdateAccountCapabilitiesSchema = z.object({
 });
 export type UpdateAccountCapabilities = z.infer<typeof UpdateAccountCapabilitiesSchema>;
 
-/** Alur login MTProto: nomor → kode → 2FA opsional. Password 2FA tidak pernah dilog. */
+/**
+ * Alur login MTProto: nomor → kode → 2FA opsional. Password 2FA tidak pernah dilog.
+ *
+ * Phone format: E.164-ish — mandatory `+` country-code prefix followed by 8–15
+ * digits, first digit != 0. Keeps parity with the client-side validator in the
+ * add-account dialog so the API never has to reject a value that already looked
+ * fine in the UI.
+ */
+export const PhoneNumberSchema = z
+  .string()
+  .trim()
+  .regex(/^\+[1-9]\d{7,14}$/, 'Nomor telepon tidak valid (format: +kodenegara + nomor, misal +6281234567890)');
 export const StartAccountLoginSchema = z.object({
-  phone: z.string().regex(/^\+?[1-9]\d{8,14}$/, 'Nomor telepon tidak valid'),
+  phone: PhoneNumberSchema,
 });
 export type StartAccountLogin = z.infer<typeof StartAccountLoginSchema>;
 
@@ -51,3 +63,18 @@ export const AccountLoginStepSchema = z.object({
   account: TelegramAccountSchema.optional(),
 });
 export type AccountLoginStep = z.infer<typeof AccountLoginStepSchema>;
+
+/**
+ * Live progress of an MTProto login attempt, served by
+ * `GET /accounts/login/:loginId/status`. The SPA polls this to drive the
+ * add-account wizard — it covers both the happy path (progressing stages)
+ * and failure (`stage: 'failed'` with a human-friendly message).
+ */
+export const AccountLoginStatusSchema = z.object({
+  stage: z.enum(['pending', 'connecting', 'code_sent', 'password_required', 'completed', 'failed']),
+  errorCode: z.string().optional(),
+  message: z.string().optional(),
+  retryable: z.boolean().optional(),
+  at: z.number().int().nonnegative(),
+});
+export type AccountLoginStatus = z.infer<typeof AccountLoginStatusSchema>;

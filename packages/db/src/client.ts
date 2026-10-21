@@ -5,7 +5,7 @@ import { PrismaClient } from '@prisma/client';
  * globalThis so hot-reload doesn't open a new pool on every change.
  */
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __eakPrisma: PrismaClient | undefined;
 }
 

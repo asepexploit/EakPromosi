@@ -20,7 +20,7 @@ export function THead({ children }: { children: ReactNode }): JSX.Element {
 
 export function TBody({ children }: { children: ReactNode }): JSX.Element {
   return (
-    <tbody className="[&_tr]:transition-colors [&_tr:hover]:bg-fg/[0.03] [&_td]:px-4 [&_td]:py-3 [&_td]:border-b [&_td]:border-line-soft/60 [&_td]:align-middle [&_tr:last-child_td]:border-b-0 [&_td.r]:text-right [&_td.mono]:font-mono [&_td.mono]:text-xs">
+    <tbody className="[&_tr]:transition-colors [&_tr:hover]:bg-fg/[0.03] [&_td]:px-4 [&_td]:py-3 [&_td]:border-b [&_td]:border-line/60 [&_td]:align-middle [&_tr:last-child_td]:border-b-0 [&_td.r]:text-right [&_td.mono]:font-mono [&_td.mono]:text-xs">
       {children}
     </tbody>
   );

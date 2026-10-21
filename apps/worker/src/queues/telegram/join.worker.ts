@@ -1,10 +1,10 @@
 import { QUEUE_NAMES } from '@eak/config';
 import { JoinJobStatus, GroupKind, MembershipStatus } from '@eak/db';
-import { Worker, type Job } from 'bullmq';
+import type { Worker} from 'bullmq';
+import { type Job } from 'bullmq';
 import { Api } from 'telegram';
 import { z } from 'zod';
 
-import { ensureOnce } from '../../lib/idempotency.js';
 import { RetryableJobError, runTelegramCall } from '../../telegram/safety.js';
 import { UserbotAdapter } from '../../telegram/userbot.adapter.js';
 import type { TelegramWorkerDeps } from '../../types.js';
@@ -31,19 +31,17 @@ export function registerTelegramJoinWorker(deps: TelegramWorkerDeps): Worker {
     QUEUE_NAMES.telegramJoin,
     async (job: Job) => {
       const payload = Payload.parse(job.data);
-      const dedup = await ensureOnce(deps.prisma, {
-        queueName: QUEUE_NAMES.telegramJoin,
-        idempotencyKey: `join:${payload.joinJobId}`,
-        tenantId: payload.tenantId,
-        jobId: job.id ?? null,
-      });
-      if (dedup.alreadyProcessed) return { skipped: 'already_processed' };
 
       const row = await deps.prisma.joinJob.findFirst({
         where: { id: payload.joinJobId, tenantId: payload.tenantId },
         include: { account: true },
       });
       if (!row || !row.account.sessionCipher) return { skipped: 'not_found_or_no_session' };
+      // Terminal states — a BullMQ retry landing here must not re-run the join.
+      // `joining` is reachable on a crash recovery and should be re-tried.
+      if (row.status === JoinJobStatus.joined || row.status === JoinJobStatus.skipped) {
+        return { skipped: `terminal:${row.status}` };
+      }
 
       await deps.prisma.joinJob.update({
         where: { id: row.id },

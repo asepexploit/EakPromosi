@@ -1,14 +1,14 @@
 import { AppError, isAppError } from '@eak/config';
-import type { FastifyInstance } from 'fastify';
 import { ZodError } from 'zod';
+
+import type { FastifyTypedInstance } from '../plugin-types.js';
 
 /**
  * Global error handler. Everything thrown or passed to `reply.send` of an
  * Error ends up here. Shape of the response body is locked by
  * `.claude/rules/api.md`: `{ error: { code, message, details? } }`.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function registerErrorHandler(app: FastifyInstance<any, any, any, any, any>): Promise<void> {
+export async function registerErrorHandler(app: FastifyTypedInstance): Promise<void> {
   app.setErrorHandler((err, req, reply) => {
     if (err instanceof ZodError) {
       void reply.status(422).send({
@@ -31,8 +31,16 @@ export async function registerErrorHandler(app: FastifyInstance<any, any, any, a
 
     // Fastify validation (JSON schema) and native errors
     const status = (err as { statusCode?: number }).statusCode;
+    const code = (err as { code?: unknown }).code;
+    const message = (err as { message?: unknown }).message;
     if (status && status >= 400 && status < 500) {
-      void reply.status(status).send({ error: { code: 'VALIDATION_FAILED', message: err.message } });
+      // Normalize body/query/params validation failures to 422 Unprocessable
+      // Entity to match .claude/rules/api.md. Fastify's built-in validator
+      // uses `FST_ERR_VALIDATION` and sets `statusCode: 400` by default.
+      const isValidation = status === 400 && code === 'FST_ERR_VALIDATION';
+      void reply.status(isValidation ? 422 : status).send({
+        error: { code: 'VALIDATION_FAILED', message: typeof message === 'string' ? message : 'Request invalid' },
+      });
       return;
     }
 

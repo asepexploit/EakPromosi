@@ -1,15 +1,15 @@
-import { ChangePasswordSchema, LoginSchema, RegisterSchema, SessionBundleSchema, SwitchTenantSchema, envelope } from '@eak/shared';
 import { AppError } from '@eak/config';
+import { ChangePasswordSchema, LoginSchema, RegisterSchema, SessionBundleSchema, SwitchTenantSchema, envelope } from '@eak/shared';
 import * as argon2 from 'argon2';
 import { z } from 'zod';
 
+import { AuthService } from './auth.service.js';
 import { AuditService } from '../../lib/audit-service.js';
 import { ok } from '../../lib/response.js';
+import type { ApiPlugin } from '../../plugin-types.js';
 import { hashSessionToken } from '../../plugins/auth-context.js';
 
-import { AuthService } from './auth.service.js';
 
-import type { ApiPlugin } from '../../plugin-types.js';
 
 export const registerAuthModule: ApiPlugin = async (app) => {
   const auth = new AuthService(app.prisma, new AuditService(app.prisma));
@@ -44,7 +44,19 @@ export const registerAuthModule: ApiPlugin = async (app) => {
   app.post(
     '/login',
     {
-      config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+      config: {
+        rateLimit: {
+          max: 20,
+          timeWindow: '1 minute',
+          // Combine IP + submitted email so a shared NAT doesn't lock a user
+          // out, and a single email can't be brute-forced from many IPs.
+          keyGenerator: (req) => {
+            const body = (req.body as { email?: string } | undefined) ?? {};
+            const email = typeof body.email === 'string' ? body.email.toLowerCase() : '';
+            return `${req.ip}|${email}`;
+          },
+        },
+      },
       schema: { body: LoginSchema, response: { 200: envelope(SessionBundleSchema) } },
     },
     async (req, reply) => {
@@ -67,7 +79,7 @@ export const registerAuthModule: ApiPlugin = async (app) => {
       const raw = req.cookies[app.env.SESSION_COOKIE_NAME];
       if (raw) await auth.logout(raw);
       void reply.clearCookie(app.env.SESSION_COOKIE_NAME, sessionCookieOptions);
-      void reply.status(204).send();
+      void reply.status(204).send(undefined);
     },
   );
 
@@ -86,6 +98,7 @@ export const registerAuthModule: ApiPlugin = async (app) => {
     '/change-password',
     {
       preHandler: app.requireAuth,
+      config: { rateLimit: { max: 10, timeWindow: '15 minutes' } },
       schema: { body: ChangePasswordSchema, response: { 204: z.object({}).optional() } },
     },
     async (req, reply) => {
@@ -109,7 +122,7 @@ export const registerAuthModule: ApiPlugin = async (app) => {
         resourceId: user.id,
         severity: 'warn',
       });
-      void reply.status(204).send();
+      void reply.status(204).send(undefined);
     },
   );
 

@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { IdSchema, IsoDateTimeSchema } from './common';
+
+import { IdSchema, IsoDateTimeSchema } from './common.js';
 
 /** Modul 03 — klasifikasi & status link (product-spec §4). */
 export const LinkKindSchema = z.enum(['public_username', 'private_invite', 'public_mention']);

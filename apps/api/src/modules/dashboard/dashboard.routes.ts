@@ -1,7 +1,6 @@
 import { DashboardSummarySchema, envelope } from '@eak/shared';
 
 import { ok } from '../../lib/response.js';
-
 import type { ApiPlugin } from '../../plugin-types.js';
 
 export const registerDashboardModule: ApiPlugin = async (app) => {

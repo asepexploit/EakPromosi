@@ -1,3 +1,4 @@
+import type { Group } from '@eak/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ban, Database, RotateCcw, Search } from 'lucide-react';
 import { useState } from 'react';
@@ -14,7 +15,6 @@ import { Switch } from '../../components/ui/Switch';
 import { TBody, THead, Table, TMain, TSub } from '../../components/ui/Table';
 import { apiFetch } from '../../lib/api';
 import { useApiMutation } from '../../lib/mutation';
-import type { Group } from '@eak/shared';
 
 export function GroupsPage(): JSX.Element {
   const qc = useQueryClient();

@@ -1,3 +1,4 @@
+import type { DmRule, UpsertDmRule } from '@eak/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MessageCircle, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -14,7 +15,6 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { Switch } from '../../components/ui/Switch';
 import { apiFetch } from '../../lib/api';
 import { useApiMutation } from '../../lib/mutation';
-import type { DmRule, UpsertDmRule } from '@eak/shared';
 
 export function DmPage(): JSX.Element {
   const qc = useQueryClient();
@@ -78,7 +78,7 @@ export function DmPage(): JSX.Element {
               }
             />
           ) : (
-            <ul className="divide-y divide-line-soft">
+            <ul className="divide-y divide-line">
               {data.map((r) => (
                 <li key={r.id} className="py-3 flex items-center justify-between gap-4 flex-wrap">
                   <div className="min-w-0 flex-1">
@@ -269,7 +269,7 @@ function RuleDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open
             <Input value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })} />
           </Field>
         </div>
-        <div className="flex items-center justify-between py-2 border-t border-line-soft">
+        <div className="flex items-center justify-between py-2 border-t border-line">
           <div>
             <p className="text-sm font-semibold">Aktifkan rule</p>
             <p className="text-xs text-muted">Rule akan langsung aktif setelah disimpan.</p>

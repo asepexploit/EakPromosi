@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { IdSchema, IsoDateTimeSchema } from './common';
+
+import { IdSchema, IsoDateTimeSchema } from './common.js';
 
 /**
  * Modul 12 & 13 — subscription-only (product-spec §13–14).

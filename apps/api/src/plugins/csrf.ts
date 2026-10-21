@@ -1,7 +1,8 @@
 import { randomBytes } from 'node:crypto';
 
 import { AppError, hmacSha256, constantTimeEqualHex } from '@eak/config';
-import type { FastifyInstance } from 'fastify';
+
+import type { FastifyTypedInstance } from '../plugin-types.js';
 
 /**
  * CSRF double-submit:
@@ -10,8 +11,7 @@ import type { FastifyInstance } from 'fastify';
  *  - For mutating requests (anything but GET/HEAD/OPTIONS) we verify the
  *    header matches the cookie, both tied to the session via HMAC.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function registerCsrf(app: FastifyInstance<any, any, any, any, any>): Promise<void> {
+export async function registerCsrf(app: FastifyTypedInstance): Promise<void> {
   app.decorate('issueCsrfToken', (sessionTokenHash: string): string => {
     const nonce = randomBytes(16).toString('hex');
     const sig = hmacSha256(app.env.CSRF_SECRET, `${sessionTokenHash}.${nonce}`);

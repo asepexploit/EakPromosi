@@ -1,15 +1,16 @@
 import { createHash } from 'node:crypto';
 
 import { AppError } from '@eak/config';
-import type { FastifyInstance } from 'fastify';
+import type { FastifyRequest } from 'fastify';
+
+import type { FastifyTypedInstance } from '../plugin-types.js';
 
 /**
  * Reads session cookie, validates against `user_sessions`, hydrates
  * `req.user` and `req.tenant`. Routes opt in via `requireAuth`/`requireRole`
  * decorators rather than running auth globally.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function registerAuthContext(app: FastifyInstance<any, any, any, any, any>): Promise<void> {
+export async function registerAuthContext(app: FastifyTypedInstance): Promise<void> {
   app.decorate('requireAuth', async function (req: Parameters<typeof hydrate>[1]) {
     await hydrate(app, req);
     if (!req.user) throw new AppError('UNAUTHORIZED', 'Autentikasi diperlukan');
@@ -43,7 +44,7 @@ export function hashSessionToken(raw: string): string {
 }
 
 async function hydrate(
-  app: FastifyInstance,
+  app: FastifyTypedInstance,
   req: {
     cookies: Record<string, string | undefined>;
     headers: Record<string, string | string[] | undefined>;
@@ -85,11 +86,11 @@ function pickHeader(h: string | string[] | undefined): string | undefined {
 
 declare module 'fastify' {
   interface FastifyInstance {
-    requireAuth: (req: import('fastify').FastifyRequest) => Promise<void>;
-    requireTenant: (req: import('fastify').FastifyRequest) => Promise<void>;
+    requireAuth: (req: FastifyRequest) => Promise<void>;
+    requireTenant: (req: FastifyRequest) => Promise<void>;
     requireRole: (
       roles: readonly ('owner' | 'admin' | 'operator' | 'viewer')[],
-    ) => (req: import('fastify').FastifyRequest) => Promise<void>;
-    requirePlatformAdmin: (req: import('fastify').FastifyRequest) => Promise<void>;
+    ) => (req: FastifyRequest) => Promise<void>;
+    requirePlatformAdmin: (req: FastifyRequest) => Promise<void>;
   }
 }

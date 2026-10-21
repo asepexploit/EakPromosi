@@ -1,9 +1,12 @@
+import { createHash } from 'node:crypto';
+
 import { AppError, QUEUE_NAMES, encryptAesGcm, type EncryptionKey, type QueueFactory } from '@eak/config';
 import { type PrismaClient, TelegramAccountStatus } from '@eak/db';
-import type { StartAccountLogin, TelegramAccount, VerifyAccountCode } from '@eak/shared';
+import type { AccountLoginStatus, StartAccountLogin, TelegramAccount, VerifyAccountCode } from '@eak/shared';
+import type { Redis } from 'ioredis';
 
-import { AuditService } from '../../lib/audit-service.js';
-import { PlanService } from '../../lib/plan-service.js';
+import type { AuditService } from '../../lib/audit-service.js';
+import type { PlanService } from '../../lib/plan-service.js';
 
 /**
  * MTProto login is a 3-step dance (phone → code → 2FA). The API doesn't
@@ -18,7 +21,27 @@ export class AccountsService {
     private readonly audit: AuditService,
     private readonly plans: PlanService,
     private readonly encryptionKeys: EncryptionKey[],
+    private readonly redis: Redis,
   ) {}
+
+  /**
+   * Mirror of `apps/worker/src/telegram/login-flow.ts` — kept read-only here
+   * so the API layer doesn't need to depend on the worker package. Keys and
+   * payload shape MUST stay in sync with that file.
+   */
+  async getLoginStatus(loginId: string): Promise<AccountLoginStatus> {
+    const raw = await this.redis.get(`eak:login:${loginId}:status`);
+    if (!raw) return { stage: 'pending', at: 0 };
+    try {
+      const parsed = JSON.parse(raw) as AccountLoginStatus;
+      // Guard: Redis may hold the legacy plain-string format left over from
+      // a worker running an older image during a rolling restart.
+      if (typeof parsed === 'object' && parsed && 'stage' in parsed) return parsed;
+    } catch {
+      // fallthrough to legacy string handling
+    }
+    return { stage: raw as AccountLoginStatus['stage'], at: 0 };
+  }
 
   async list(tenantId: string): Promise<TelegramAccount[]> {
     const rows = await this.prisma.telegramAccount.findMany({
@@ -32,6 +55,10 @@ export class AccountsService {
     await this.plans.enforce(tenantId, { kind: 'add_account' });
 
     const loginId = `tglogin_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+    // Immediately claim active-login for this tenant. The worker's poll loops
+    // for any prior attempt will detect the mismatch within ~1s and bail out
+    // instead of silently racing the new attempt and producing "Code is empty".
+    await this.redis.set(`eak:login:active:${tenantId}`, loginId, 'EX', 300);
     await this.queues.queue(QUEUE_NAMES.telegramAuth).add(
       'telegram.auth.start',
       { kind: 'start', tenantId, loginId, phone: input.phone, requestedBy: actorUserId },
@@ -48,18 +75,14 @@ export class AccountsService {
   }
 
   async verifyCode(tenantId: string, actorUserId: string, input: VerifyAccountCode): Promise<{ status: string }> {
-    await this.queues.queue(QUEUE_NAMES.telegramAuth).add(
-      'telegram.auth.verify',
-      {
-        kind: 'verify',
-        tenantId,
-        loginId: input.loginId,
-        code: input.code,
-        password: input.password ?? null,
-        requestedBy: actorUserId,
-      },
-      { jobId: `auth-verify:${input.loginId}`, removeOnComplete: true },
-    );
+    // Push code + optional password DIRECTLY into Redis — fastest, deterministic.
+    // The old impl queued a BullMQ job keyed by loginId which silently dropped
+    // retries because jobId was unique per loginId. By skipping the queue we
+    // can push a new code (e.g. user mistyped) without BullMQ dedup fighting us.
+    await this.redis.set(`eak:login:${input.loginId}:code`, input.code, 'EX', 300);
+    if (input.password) {
+      await this.redis.set(`eak:login:${input.loginId}:password`, input.password, 'EX', 300);
+    }
     await this.audit.log({
       tenantId,
       actorUserId,
@@ -67,7 +90,45 @@ export class AccountsService {
       resource: 'telegram_account',
       resourceId: input.loginId,
     });
-    return { status: 'queued' };
+    return { status: 'dispatched' };
+  }
+
+  /**
+   * Idempotent cancel for a pending login attempt.
+   *
+   * Steps:
+   *  1. Clear the active-login claim so the worker's `poll()` sees active!=loginId
+   *     and exits waitCode/waitPassword with `canceled by newer attempt`.
+   *  2. Wipe any pending phoneCode / password keys so GramJS never gets fed a
+   *     stale value after we've declared the attempt dead.
+   *  3. Write a terminal `failed` status with `AUTH_USER_CANCEL` so a status
+   *     poll in-flight sees a clean error and can stop polling.
+   *
+   * Safe to call for a loginId that never existed — the keys simply don't exist
+   * and all three ops are no-ops.
+   */
+  async cancelLogin(tenantId: string, actorUserId: string, loginId: string): Promise<void> {
+    const activeKey = `eak:login:active:${tenantId}`;
+    const active = await this.redis.get(activeKey);
+    if (active && active === loginId) {
+      await this.redis.del(activeKey);
+    }
+    await this.redis.del(`eak:login:${loginId}:code`, `eak:login:${loginId}:password`);
+    const payload = {
+      stage: 'failed' as const,
+      errorCode: 'AUTH_USER_CANCEL',
+      message: 'Login dibatalkan.',
+      retryable: true,
+      at: Date.now(),
+    };
+    await this.redis.set(`eak:login:${loginId}:status`, JSON.stringify(payload), 'EX', 300);
+    await this.audit.log({
+      tenantId,
+      actorUserId,
+      action: 'telegram_account.login.cancel',
+      resource: 'telegram_account',
+      resourceId: loginId,
+    });
   }
 
   async disconnect(tenantId: string, actorUserId: string, accountId: string): Promise<void> {
@@ -178,8 +239,6 @@ export class AccountsService {
     };
   }
 }
-
-import { createHash } from 'node:crypto';
 
 function hashPhone(phone: string): string {
   // non-reversible, used to detect duplicates without storing the number

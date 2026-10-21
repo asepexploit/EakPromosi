@@ -1,3 +1,4 @@
+import type { Plan } from '@eak/shared';
 import { useQuery } from '@tanstack/react-query';
 import { CreditCard } from 'lucide-react';
 
@@ -5,7 +6,6 @@ import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { TBody, THead, Table, TMain } from '../../components/ui/Table';
 import { apiFetch } from '../../lib/api';
-import type { Plan } from '@eak/shared';
 
 export function AdminPlansPage(): JSX.Element {
   const { data = [] } = useQuery({ queryKey: ['admin', 'plans'], queryFn: () => apiFetch<Plan[]>('/plans') });

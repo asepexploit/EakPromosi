@@ -1,45 +1,45 @@
+import { type Env, type Logger, corsOrigins, QueueFactory, keyFromBase64, createRedis } from '@eak/config';
+import { prisma } from '@eak/db';
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import sensible from '@fastify/sensible';
 import websocket from '@fastify/websocket';
-import { type Env, type Logger, corsOrigins, QueueFactory, keyFromBase64, createRedis } from '@eak/config';
-import { prisma } from '@eak/db';
-import Fastify, { type FastifyInstance } from 'fastify';
+import Fastify from 'fastify';
 import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fastify-type-provider-zod';
 
-import { registerErrorHandler } from './plugins/error-handler.js';
-import { registerRequestId } from './plugins/request-id.js';
-import { registerAuthContext } from './plugins/auth-context.js';
-import { registerCsrf } from './plugins/csrf.js';
-import { registerAuthModule } from './modules/auth/auth.routes.js';
-import { registerTenantsModule } from './modules/tenants/tenants.routes.js';
 import { registerAccountsModule } from './modules/accounts/accounts.routes.js';
-import { registerGroupsModule } from './modules/groups/groups.routes.js';
-import { registerDiscoveryModule } from './modules/discovery/discovery.routes.js';
+import { registerAdminModule } from './modules/admin/admin.routes.js';
+import { registerAuditModule } from './modules/audit/audit.routes.js';
+import { registerAuthModule } from './modules/auth/auth.routes.js';
+import { registerBillingModule } from './modules/billing/billing.routes.js';
 import { registerBroadcastsModule } from './modules/broadcasts/broadcasts.routes.js';
 import { registerCampaignsModule } from './modules/campaigns/campaigns.routes.js';
+import { registerDashboardModule } from './modules/dashboard/dashboard.routes.js';
+import { registerDiscoveryModule } from './modules/discovery/discovery.routes.js';
 import { registerDmModule } from './modules/dm/dm.routes.js';
+import { registerGroupsModule } from './modules/groups/groups.routes.js';
+import { registerHealthModule } from './modules/health/health.routes.js';
+import { registerMonitoringModule } from './modules/monitoring/monitoring.routes.js';
 import { registerPlansModule } from './modules/plans/plans.routes.js';
 import { registerSubscriptionsModule } from './modules/subscriptions/subscriptions.routes.js';
-import { registerBillingModule } from './modules/billing/billing.routes.js';
+import { registerTenantsModule } from './modules/tenants/tenants.routes.js';
 import { registerWebhooksModule } from './modules/webhooks/webhooks.routes.js';
-import { registerDashboardModule } from './modules/dashboard/dashboard.routes.js';
-import { registerMonitoringModule } from './modules/monitoring/monitoring.routes.js';
-import { registerAdminModule } from './modules/admin/admin.routes.js';
-import { registerHealthModule } from './modules/health/health.routes.js';
-import { registerAuditModule } from './modules/audit/audit.routes.js';
+import type { FastifyTypedInstance } from './plugin-types.js';
+import { registerAuthContext } from './plugins/auth-context.js';
+import { registerCsrf } from './plugins/csrf.js';
+import { registerErrorHandler } from './plugins/error-handler.js';
+import { registerRequestId } from './plugins/request-id.js';
 
 export interface BuildAppDeps {
   env: Env;
   logger: Logger;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function buildApp({ env, logger }: BuildAppDeps): Promise<FastifyInstance<any, any, any, any, any>> {
+export async function buildApp({ env, logger }: BuildAppDeps): Promise<FastifyTypedInstance> {
   const app = Fastify({
-    loggerInstance: logger as never,
+    loggerInstance: logger,
     trustProxy: env.TRUST_PROXY,
     disableRequestLogging: true, // we add our own access log via request-id plugin
     bodyLimit: 1_048_576, // 1MB default; webhook & upload routes override

@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 
 import { App } from './App';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
+import { PlanLimitProvider } from './components/ui/PlanLimitProvider';
 import { ToastProvider } from './components/ui/Toast';
 import './styles/tailwind.css';
 
@@ -23,9 +24,11 @@ createRoot(container).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ToastProvider>
-          <ConfirmProvider>
-            <App />
-          </ConfirmProvider>
+          <PlanLimitProvider>
+            <ConfirmProvider>
+              <App />
+            </ConfirmProvider>
+          </PlanLimitProvider>
         </ToastProvider>
       </BrowserRouter>
     </QueryClientProvider>

@@ -1,8 +1,8 @@
 import 'fastify';
-import type { PrismaClient } from '@eak/db';
 import type { Env, QueueFactory, EncryptionKey } from '@eak/config';
-import type { Redis } from 'ioredis';
+import type { PrismaClient } from '@eak/db';
 import type { TenantRole } from '@eak/shared';
+import type { Redis } from 'ioredis';
 
 declare module 'fastify' {
   interface FastifyInstance {

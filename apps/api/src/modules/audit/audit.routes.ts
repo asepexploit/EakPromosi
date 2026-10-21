@@ -3,7 +3,6 @@ import { z } from 'zod';
 
 import { decodeCursor, nextCursor } from '../../lib/pagination.js';
 import { okPage } from '../../lib/response.js';
-
 import type { ApiPlugin } from '../../plugin-types.js';
 
 export const registerAuditModule: ApiPlugin = async (app) => {

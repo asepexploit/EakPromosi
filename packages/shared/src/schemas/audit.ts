@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { IdSchema, IsoDateTimeSchema } from './common';
+import { IdSchema, IsoDateTimeSchema } from './common.js';
 
 export const AuditSeveritySchema = z.enum(['info', 'warn', 'critical']);
 export type AuditSeverity = z.infer<typeof AuditSeveritySchema>;

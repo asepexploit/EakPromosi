@@ -1,5 +1,5 @@
 import { QUEUE_NAMES } from '@eak/config';
-import { Worker } from 'bullmq';
+import type { Worker } from 'bullmq';
 
 import type { WorkerDeps } from '../../types.js';
 

@@ -1,3 +1,4 @@
+import type { DiscoveredLink, DiscoverySource, TelegramAccount } from '@eak/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Compass, LinkIcon, Play, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -13,10 +14,10 @@ import { Field, Input } from '../../components/ui/Input';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Progress } from '../../components/ui/Progress';
 import { Switch } from '../../components/ui/Switch';
-import { TBody, THead, Table, TMain, TSub } from '../../components/ui/Table';
+import { TBody, THead, Table } from '../../components/ui/Table';
 import { apiFetch } from '../../lib/api';
 import { useApiMutation } from '../../lib/mutation';
-import type { DiscoveredLink, DiscoverySource, TelegramAccount } from '@eak/shared';
+import { LINK_STATUS } from '../../lib/statusLabels';
 
 export function DiscoveryPage(): JSX.Element {
   const qc = useQueryClient();
@@ -97,7 +98,7 @@ export function DiscoveryPage(): JSX.Element {
               }
             />
           ) : (
-            <ul className="divide-y divide-line-soft">
+            <ul className="divide-y divide-line">
               {sources.map((s) => (
                 <li key={s.id} className="py-3 flex items-center justify-between gap-4 flex-wrap">
                   <div className="min-w-0 flex-1">
@@ -160,7 +161,7 @@ export function DiscoveryPage(): JSX.Element {
                       </Badge>
                     </td>
                     <td>
-                      <Badge tone={l.status === 'valid' ? 'ok' : l.status === 'invalid' ? 'bad' : 'default'}>{l.status}</Badge>
+                      <Badge tone={LINK_STATUS[l.status].tone}>{LINK_STATUS[l.status].label}</Badge>
                     </td>
                     <td className="text-xs text-muted tabular">{new Date(l.lastSeenAt).toLocaleString('id-ID')}</td>
                   </tr>
@@ -251,7 +252,7 @@ function AddSourceDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
             placeholder="@contohgrup atau -100123456789"
           />
         </Field>
-        <div className="flex items-center justify-between py-2 border-y border-line-soft">
+        <div className="flex items-center justify-between py-2 border-y border-line">
           <div>
             <p className="text-sm font-semibold">Deteksi mentions</p>
             <p className="text-xs text-muted">Juga tangkap @username yang disebutkan di dalam pesan.</p>

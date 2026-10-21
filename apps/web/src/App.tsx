@@ -1,32 +1,31 @@
+import type { SessionBundle } from '@eak/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
-import { apiFetch } from './lib/api';
-import { AppLayout } from './components/layout/AppLayout';
 import { AdminLayout } from './components/layout/AdminLayout';
-import { useAuthStore } from './stores/auth';
-
+import { AppLayout } from './components/layout/AppLayout';
+import { apiFetch } from './lib/api';
+import { AccountsPage } from './pages/accounts/AccountsPage';
+import { AdminInvoicesPage } from './pages/admin/AdminInvoicesPage';
+import { AdminPlansPage } from './pages/admin/AdminPlansPage';
+import { AdminTenantsPage } from './pages/admin/AdminTenantsPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
-import { DashboardPage } from './pages/dashboard/DashboardPage';
-import { AccountsPage } from './pages/accounts/AccountsPage';
-import { GroupsPage } from './pages/groups/GroupsPage';
-import { DiscoveryPage } from './pages/discovery/DiscoveryPage';
-import { MembershipPage } from './pages/membership/MembershipPage';
+import { PaymentsPage } from './pages/billing/PaymentsPage';
+import { PlansPage } from './pages/billing/PlansPage';
 import { BroadcastsPage } from './pages/broadcasts/BroadcastsPage';
 import { CampaignsPage } from './pages/campaigns/CampaignsPage';
+import { DashboardPage } from './pages/dashboard/DashboardPage';
+import { DiscoveryPage } from './pages/discovery/DiscoveryPage';
 import { DmPage } from './pages/dm/DmPage';
+import { GroupsPage } from './pages/groups/GroupsPage';
+import { MembershipPage } from './pages/membership/MembershipPage';
 import { MonitoringPage } from './pages/monitoring/MonitoringPage';
 import { QueuePage } from './pages/queue/QueuePage';
 import { ReportsPage } from './pages/reports/ReportsPage';
-import { PlansPage } from './pages/billing/PlansPage';
-import { PaymentsPage } from './pages/billing/PaymentsPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
-import { AdminTenantsPage } from './pages/admin/AdminTenantsPage';
-import { AdminPlansPage } from './pages/admin/AdminPlansPage';
-import { AdminInvoicesPage } from './pages/admin/AdminInvoicesPage';
-import type { SessionBundle } from '@eak/shared';
+import { useAuthStore } from './stores/auth';
 
 function useBootstrapSession(): void {
   const setBundle = useAuthStore((s) => s.setBundle);

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { IdSchema, IsoDateTimeSchema, TenantRoleSchema } from './common';
+import { IdSchema, IsoDateTimeSchema, TenantRoleSchema } from './common.js';
 
 export const RegisterSchema = z.object({
   email: z.string().email().max(200),

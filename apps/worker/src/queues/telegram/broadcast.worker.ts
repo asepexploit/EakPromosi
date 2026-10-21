@@ -1,9 +1,9 @@
 import { QUEUE_NAMES } from '@eak/config';
 import { BroadcastStatus, BroadcastTargetStatus } from '@eak/db';
-import { Worker, type Job } from 'bullmq';
+import type { Worker} from 'bullmq';
+import { type Job } from 'bullmq';
 import { z } from 'zod';
 
-import { ensureOnce } from '../../lib/idempotency.js';
 import { RetryableJobError, isPermanentSendFailure, jitterMs, runTelegramCall } from '../../telegram/safety.js';
 import { UserbotAdapter } from '../../telegram/userbot.adapter.js';
 import type { TelegramWorkerDeps } from '../../types.js';
@@ -31,13 +31,6 @@ export function registerTelegramBroadcastWorker(deps: TelegramWorkerDeps): Worke
     QUEUE_NAMES.telegramBroadcast,
     async (job: Job) => {
       const { tenantId, broadcastId } = Payload.parse(job.data);
-      const dedup = await ensureOnce(deps.prisma, {
-        queueName: QUEUE_NAMES.telegramBroadcast,
-        idempotencyKey: `broadcast-start:${broadcastId}`,
-        tenantId,
-        jobId: job.id ?? null,
-      });
-      if (dedup.alreadyProcessed) return { skipped: 'already_processed' };
 
       const broadcast = await deps.prisma.broadcast.findFirst({
         where: { id: broadcastId, tenantId },
@@ -45,9 +38,21 @@ export function registerTelegramBroadcastWorker(deps: TelegramWorkerDeps): Worke
       });
       if (!broadcast || !broadcast.account.sessionCipher) return { skipped: 'not_found_or_no_session' };
 
+      // Terminal states: no reprocessing. BullMQ retries land here too, so the
+      // check doubles as the retry guard. Any queued/paused targets left over
+      // from a crash can be resumed via /broadcasts/:id/resume (which flips
+      // status back to queued and re-enqueues).
+      if (
+        broadcast.status === BroadcastStatus.completed ||
+        broadcast.status === BroadcastStatus.canceled ||
+        broadcast.status === BroadcastStatus.failed
+      ) {
+        return { skipped: `terminal:${broadcast.status}` };
+      }
+
       await deps.prisma.broadcast.update({
         where: { id: broadcast.id },
-        data: { status: BroadcastStatus.sending, startedAt: new Date() },
+        data: { status: BroadcastStatus.sending, startedAt: broadcast.startedAt ?? new Date() },
       });
 
       const targets = await deps.prisma.broadcastTarget.findMany({

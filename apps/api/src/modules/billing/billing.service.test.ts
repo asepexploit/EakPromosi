@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { BillingService } from './billing.service.js';
 import { AuditService } from '../../lib/audit-service.js';
 
-import { BillingService } from './billing.service.js';
 
 // Minimal prisma stub tailored to the subscription-only transitions
 // (`pending → paid` activates/extends; everything else is a no-op).

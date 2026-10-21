@@ -1,5 +1,6 @@
 import { QUEUE_NAMES } from '@eak/config';
-import { Worker, type Job } from 'bullmq';
+import type { Worker} from 'bullmq';
+import { type Job } from 'bullmq';
 import { z } from 'zod';
 
 import type { TelegramWorkerDeps } from '../../types.js';

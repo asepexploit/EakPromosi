@@ -1,11 +1,11 @@
 import { randomBytes } from 'node:crypto';
 
 import { AppError } from '@eak/config';
-import { type PrismaClient, TenantRole, TenantStatus, SubscriptionStatus } from '@eak/db';
+import { type PrismaClient, type Prisma, TenantRole, TenantStatus, SubscriptionStatus } from '@eak/db';
 import type { Register, Login, SessionBundle } from '@eak/shared';
 import * as argon2 from 'argon2';
 
-import { AuditService } from '../../lib/audit-service.js';
+import type { AuditService } from '../../lib/audit-service.js';
 import { hashSessionToken } from '../../plugins/auth-context.js';
 
 /**
@@ -184,5 +184,3 @@ export class AuthService {
   }
 }
 
-// re-export the transaction type so the private helper above compiles
-import type { Prisma } from '@eak/db';

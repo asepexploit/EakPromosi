@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { IdSchema, IsoDateTimeSchema } from './common';
+import { IdSchema, IsoDateTimeSchema } from './common.js';
 
 export const QueueNameSchema = z.enum([
   'telegram-auth',

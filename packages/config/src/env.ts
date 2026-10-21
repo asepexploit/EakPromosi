@@ -61,7 +61,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   const parsed = EnvSchema.safeParse(source);
   if (!parsed.success) {
     const details = parsed.error.issues.map((i) => `  - ${i.path.join('.')}: ${i.message}`).join('\n');
-    // eslint-disable-next-line no-console
+     
     console.error(`[config] Invalid environment:\n${details}`);
     throw new Error('Environment validation failed');
   }

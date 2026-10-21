@@ -1,9 +1,10 @@
 import { QUEUE_NAMES } from '@eak/config';
 import { MembershipStatus } from '@eak/db';
-import { Worker, type Job } from 'bullmq';
+import type { Worker} from 'bullmq';
+import { type Job } from 'bullmq';
 import { z } from 'zod';
 
-import { runTelegramCall } from '../../telegram/safety.js';
+import { RetryableJobError, runTelegramCall } from '../../telegram/safety.js';
 import { UserbotAdapter } from '../../telegram/userbot.adapter.js';
 import type { TelegramWorkerDeps } from '../../types.js';
 
@@ -53,7 +54,16 @@ export function registerTelegramMembershipSyncWorker(deps: TelegramWorkerDeps): 
               where: { id: m.id },
               data: { lastCheckedAt: new Date() },
             });
-          } catch {
+          } catch (err) {
+            // Flood-wait or other retryable transport errors are NOT a signal
+            // that we left the group — reschedule the whole job and bail.
+            if (err instanceof RetryableJobError) {
+              log.warn({ membershipId: m.id, delayMs: err.delayMs }, 'membership-sync flood_wait → reschedule');
+              await job.moveToDelayed(Date.now() + err.delayMs);
+              return { requeued: true, delayMs: err.delayMs };
+            }
+            // Permanent getEntity failure means we no longer have access to
+            // the chat — mark membership as left.
             await deps.prisma.groupMembership.update({
               where: { id: m.id },
               data: { status: MembershipStatus.left, leftAt: new Date(), lastCheckedAt: new Date() },

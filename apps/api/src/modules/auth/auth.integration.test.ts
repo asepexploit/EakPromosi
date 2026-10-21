@@ -1,7 +1,7 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { prisma } from '@eak/db';
 import { BillingPeriod } from '@eak/db';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { buildTestApp } from '../../test/build-app.js';
 import { resetDatabase } from '../../test/db-reset.js';
@@ -19,8 +19,10 @@ d('auth integration', () => {
 
   beforeAll(async () => {
     await resetDatabase(prisma);
-    await prisma.plan.create({
-      data: {
+    await prisma.plan.upsert({
+      where: { code: 'free' },
+      update: {},
+      create: {
         code: 'free',
         name: 'Free',
         priceIdr: 0,

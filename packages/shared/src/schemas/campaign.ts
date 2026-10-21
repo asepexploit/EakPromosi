@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { IdSchema, IsoDateTimeSchema } from './common';
+
+import { IdSchema, IsoDateTimeSchema } from './common.js';
 
 /** Modul 06 — status per target broadcast (product-spec §7). */
 export const BroadcastTargetStatusSchema = z.enum(['queued', 'sending', 'sent', 'failed', 'skipped']);

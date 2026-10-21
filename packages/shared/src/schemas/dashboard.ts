@@ -1,6 +1,7 @@
 import { z } from 'zod';
-import { IsoDateSchema, IsoDateTimeSchema } from './common';
-import { TelegramAccountStatusSchema } from './account';
+
+import { TelegramAccountStatusSchema } from './account.js';
+import { IsoDateSchema, IsoDateTimeSchema } from './common.js';
 
 /** Modul 01 — ringkasan tenant (product-spec §2). */
 export const QueueCountersSchema = z.object({

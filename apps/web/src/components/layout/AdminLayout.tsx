@@ -109,7 +109,7 @@ export function AdminLayout({ children }: { children: ReactNode }): JSX.Element 
       </aside>
 
       <main className="min-w-0 flex flex-col">
-        <header className="sticky top-0 z-20 glass-top border-b border-line-soft">
+        <header className="sticky top-0 z-20 glass-top border-b border-line">
           <div className="flex items-center gap-2 md:gap-3 px-4 md:px-7 py-3 min-h-[64px]">
             <Button
               variant="ghost"

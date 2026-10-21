@@ -1,8 +1,9 @@
+import type { CampaignSummary, Group, TelegramAccount } from '@eak/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Archive, Calendar, PauseCircle, PlayCircle, Plus, StopCircle } from 'lucide-react';
 import { useState } from 'react';
 
-import { Badge, type BadgeTone } from '../../components/ui/Badge';
+import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
@@ -13,17 +14,7 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { Progress } from '../../components/ui/Progress';
 import { apiFetch } from '../../lib/api';
 import { useApiMutation } from '../../lib/mutation';
-import type { CampaignStatus, CampaignSummary, Group, TelegramAccount } from '@eak/shared';
-
-const STATUS_TONE: Record<CampaignStatus, BadgeTone> = {
-  draft: 'default',
-  scheduled: 'info',
-  running: 'ok',
-  paused: 'warn',
-  completed: 'ok',
-  failed: 'bad',
-  archived: 'default',
-};
+import { CAMPAIGN_STATUS } from '../../lib/statusLabels';
 
 export function CampaignsPage(): JSX.Element {
   const qc = useQueryClient();
@@ -100,8 +91,8 @@ export function CampaignsPage(): JSX.Element {
                   subtitle={`${c.targetCount} target · ${c.accountIds.length} akun`}
                   icon={<Calendar size={14} />}
                   actions={
-                    <Badge tone={STATUS_TONE[c.status]} pulse={c.status === 'running'}>
-                      {c.status}
+                    <Badge tone={CAMPAIGN_STATUS[c.status].tone} pulse={c.status === 'running'}>
+                      {CAMPAIGN_STATUS[c.status].label}
                     </Badge>
                   }
                 />
@@ -320,7 +311,7 @@ function Picker({
                   <button
                     type="button"
                     onClick={() => onToggle(it.id)}
-                    className="w-full text-left px-3 py-2 border-b border-line-soft last:border-0 hover:bg-sunk flex items-center gap-2.5"
+                    className="w-full text-left px-3 py-2 border-b border-line last:border-0 hover:bg-sunk flex items-center gap-2.5"
                   >
                     <span
                       className={`w-4 h-4 rounded border-[1.5px] grid place-items-center flex-none ${checked ? 'bg-tg border-tg' : 'border-muted/60'}`}

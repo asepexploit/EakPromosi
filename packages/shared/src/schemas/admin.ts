@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { IdSchema, IsoDateTimeSchema } from './common';
-import { BillingPeriodSchema, PlanCodeSchema } from './billing';
+import { BillingPeriodSchema, PlanCodeSchema } from './billing.js';
+import { IdSchema, IsoDateTimeSchema } from './common.js';
 
 export const AdminPlanInputSchema = z.object({
   code: z.string().min(1).max(30),

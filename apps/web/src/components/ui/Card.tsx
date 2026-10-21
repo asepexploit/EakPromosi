@@ -55,7 +55,7 @@ export function CardBody({ className, children }: { className?: string; children
 
 export function CardFooter({ className, children }: { className?: string; children: ReactNode }): JSX.Element {
   return (
-    <div className={cn('px-5 py-3 border-t border-line-soft flex items-center justify-between gap-2.5', className)}>
+    <div className={cn('px-5 py-3 border-t border-line flex items-center justify-between gap-2.5', className)}>
       {children}
     </div>
   );

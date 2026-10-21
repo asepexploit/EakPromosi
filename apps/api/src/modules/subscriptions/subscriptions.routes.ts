@@ -2,7 +2,6 @@ import { SubscriptionSchema, envelope } from '@eak/shared';
 
 import { PlanService } from '../../lib/plan-service.js';
 import { ok } from '../../lib/response.js';
-
 import type { ApiPlugin } from '../../plugin-types.js';
 
 export const registerSubscriptionsModule: ApiPlugin = async (app) => {

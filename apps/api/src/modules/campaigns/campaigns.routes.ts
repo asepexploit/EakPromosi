@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { AuditService } from '../../lib/audit-service.js';
 import { PlanService } from '../../lib/plan-service.js';
 import { ok } from '../../lib/response.js';
-
 import type { ApiPlugin } from '../../plugin-types.js';
 
 const UpsertCampaignSchema = z.object({
@@ -117,7 +116,12 @@ export const registerCampaignsModule: ApiPlugin = async (app) => {
         }[op] as 'scheduled' | 'paused' | 'running' | 'completed' | 'archived';
         await app.prisma.campaign.update({
           where: { id: c.id },
-          data: { status: nextStatus, archivedAt: op === 'archive' ? new Date() : null },
+          data: {
+            status: nextStatus,
+            // Only touch archivedAt when archiving — otherwise ops like
+            // start/pause would silently un-archive a campaign.
+            ...(op === 'archive' ? { archivedAt: new Date() } : {}),
+          },
         });
         await audit.log({
           tenantId: req.tenant!.id,

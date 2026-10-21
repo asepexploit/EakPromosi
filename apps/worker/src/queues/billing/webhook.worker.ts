@@ -1,6 +1,7 @@
 import { AppError, QUEUE_NAMES } from '@eak/config';
 import { InvoiceStatus, SubscriptionStatus, WebhookStatus, BillingPeriod } from '@eak/db';
-import { Worker, type Job } from 'bullmq';
+import type { Worker} from 'bullmq';
+import { type Job } from 'bullmq';
 import { z } from 'zod';
 
 import type { WorkerDeps } from '../../types.js';
@@ -36,7 +37,7 @@ export function registerBillingWebhookWorker(deps: WorkerDeps): Worker {
         return { skipped: 'already_processed' };
       }
 
-      const invoice = await deps.prisma.invoice.findFirst({
+      const invoice = await deps.prisma.invoice.findUnique({
         where: { pakasirInvoiceId: payload.invoiceId },
         include: { plan: true },
       });

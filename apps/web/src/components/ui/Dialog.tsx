@@ -25,11 +25,11 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
-        <RadixDialog.Overlay className="fixed inset-0 bg-fg/40 backdrop-blur-sm data-[state=open]:animate-fade-up z-40" />
+        <RadixDialog.Overlay className="fixed inset-0 bg-fg/50 z-40" />
         <RadixDialog.Content
           className={cn(
             'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-2rem)] bg-panel rounded-xl shadow-pop border border-line z-50',
-            'data-[state=open]:animate-fade-up max-h-[calc(100vh-2rem)] flex flex-col',
+            'max-h-[calc(100vh-2rem)] flex flex-col',
             SIZE[size],
           )}
         >
@@ -45,7 +45,7 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
             </RadixDialog.Close>
           </div>
           <div className="px-5 py-4 overflow-y-auto flex-1 min-h-0">{children}</div>
-          {footer ? <div className="px-5 py-3 border-t border-line-soft flex items-center justify-end gap-2">{footer}</div> : null}
+          {footer ? <div className="px-5 py-3 border-t border-line flex items-center justify-end gap-2">{footer}</div> : null}
         </RadixDialog.Content>
       </RadixDialog.Portal>
     </RadixDialog.Root>

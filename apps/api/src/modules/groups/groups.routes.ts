@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { AuditService } from '../../lib/audit-service.js';
 import { decodeCursor, nextCursor } from '../../lib/pagination.js';
 import { okPage, ok } from '../../lib/response.js';
-
 import type { ApiPlugin } from '../../plugin-types.js';
 
 export const registerGroupsModule: ApiPlugin = async (app) => {

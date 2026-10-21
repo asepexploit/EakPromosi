@@ -1,3 +1,4 @@
+import type { AdminTenantSummary } from '@eak/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Building2, Pause, PlayCircle } from 'lucide-react';
 import { useState } from 'react';
@@ -12,7 +13,6 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { TBody, THead, Table, TMain, TSub } from '../../components/ui/Table';
 import { apiFetch } from '../../lib/api';
 import { useApiMutation } from '../../lib/mutation';
-import type { AdminTenantSummary } from '@eak/shared';
 
 export function AdminTenantsPage(): JSX.Element {
   const qc = useQueryClient();

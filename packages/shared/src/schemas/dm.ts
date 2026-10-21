@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { IdSchema, IsoDateTimeSchema } from './common';
+import { IdSchema, IsoDateTimeSchema } from './common.js';
 
 export const DmTriggerTypeSchema = z.enum(['keyword_match', 'new_dm', 'mention', 'group_join_event']);
 export type DmTriggerType = z.infer<typeof DmTriggerTypeSchema>;

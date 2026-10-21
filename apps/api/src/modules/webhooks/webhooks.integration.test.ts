@@ -1,9 +1,9 @@
 import { createHmac } from 'node:crypto';
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { prisma } from '@eak/db';
 import { BillingPeriod, InvoiceStatus } from '@eak/db';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { buildTestApp } from '../../test/build-app.js';
 import { resetDatabase } from '../../test/db-reset.js';
@@ -16,8 +16,10 @@ d('pakasir webhook integration', () => {
 
   beforeAll(async () => {
     await resetDatabase(prisma);
-    await prisma.plan.create({
-      data: {
+    await prisma.plan.upsert({
+      where: { code: 'pro' },
+      update: {},
+      create: {
         code: 'pro',
         name: 'Pro',
         priceIdr: 149_000,
@@ -45,6 +47,7 @@ d('pakasir webhook integration', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/webhooks/pakasir',
+      headers: { 'content-type': 'application/json' },
       payload: '{}',
     });
     expect(res.statusCode).toBe(401);

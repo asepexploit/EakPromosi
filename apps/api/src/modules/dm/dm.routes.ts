@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { AuditService } from '../../lib/audit-service.js';
 import { PlanService } from '../../lib/plan-service.js';
 import { ok } from '../../lib/response.js';
-
 import type { ApiPlugin } from '../../plugin-types.js';
 
 export const registerDmModule: ApiPlugin = async (app) => {

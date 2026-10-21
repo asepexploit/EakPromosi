@@ -2,7 +2,6 @@ import { PlanSchema, envelope } from '@eak/shared';
 import { z } from 'zod';
 
 import { ok } from '../../lib/response.js';
-
 import type { ApiPlugin } from '../../plugin-types.js';
 
 export const registerPlansModule: ApiPlugin = async (app) => {

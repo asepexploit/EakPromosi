@@ -33,7 +33,10 @@ export async function resetDatabase(prisma: PrismaClient): Promise<void> {
     'tenants',
     'user_sessions',
     'users',
-    'plans',
+    // NOTE: `plans` deliberately NOT truncated — it's reference data seeded
+    // once at bootstrap. Clearing it between tests leaves live dev DBs broken
+    // after an integration run and makes test suites coupled to plan creation
+    // order. If a test needs a specific plan shape, use `prisma.plan.upsert`.
   ];
   for (const t of tables) {
     await prisma.$executeRawUnsafe(`TRUNCATE TABLE "${t}" RESTART IDENTITY CASCADE`);

@@ -1,16 +1,17 @@
 import { randomUUID } from 'node:crypto';
 
-import type { FastifyInstance } from 'fastify';
+import type { FastifyTypedInstance } from '../plugin-types.js';
 
 /**
  * Attach a request id for every request. Prefers an inbound `x-request-id`
  * header when present so correlation survives upstream hops.
  *
- * Typed as `FastifyInstance<any>` so it composes with the ZodTypeProvider
- * instance in app.ts without re-declaring every generic.
+ * Typed via `FastifyTypedInstance` (ZodTypeProvider-aware) because app.ts
+ * builds its instance with `.withTypeProvider<ZodTypeProvider>()` and
+ * Fastify v5 is strict about mixing TypeProviders under
+ * `exactOptionalPropertyTypes: true`.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function registerRequestId(app: FastifyInstance<any, any, any, any, any>): Promise<void> {
+export async function registerRequestId(app: FastifyTypedInstance): Promise<void> {
   app.addHook('onRequest', async (req, reply) => {
     const incoming = req.headers['x-request-id'];
     req.requestId = typeof incoming === 'string' && incoming.length <= 64 ? incoming : randomUUID();

@@ -7,12 +7,10 @@ import {
 } from '@eak/shared';
 import { z } from 'zod';
 
+import { BroadcastsService } from './broadcasts.service.js';
 import { AuditService } from '../../lib/audit-service.js';
 import { PlanService } from '../../lib/plan-service.js';
 import { ok } from '../../lib/response.js';
-
-import { BroadcastsService } from './broadcasts.service.js';
-
 import type { ApiPlugin } from '../../plugin-types.js';
 
 export const registerBroadcastsModule: ApiPlugin = async (app) => {

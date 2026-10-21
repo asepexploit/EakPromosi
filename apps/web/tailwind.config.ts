@@ -18,7 +18,6 @@ export default {
         fg: token('fg'),
         muted: token('muted'),
         line: token('line'),
-        'line-soft': token('line-soft'),
         tg: {
           DEFAULT: token('tg'),
           ink: token('tg-ink'),

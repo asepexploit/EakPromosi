@@ -1,5 +1,5 @@
 import { QUEUE_NAMES } from '@eak/config';
-import { Worker } from 'bullmq';
+import type { Worker } from 'bullmq';
 
 import type { WorkerDeps } from '../../types.js';
 
@@ -25,13 +25,12 @@ export function registerCampaignsSchedulerWorker(deps: WorkerDeps): Worker {
       include: { schedules: { where: { isActive: true } } },
     });
     for (const c of dueCampaigns) {
-      // naive match: if any schedule cron is '* * * * *' or 'now' flag we fire;
-      // real cron matching is left for the full implementation.
+      // Real cron matching is deferred to a later phase. Until then we DO NOT
+      // create a CampaignRun on every tick — that produced one row every 60s
+      // per scheduled campaign and quickly swamped the table. Skipping here
+      // keeps the plumbing live without the runaway writes.
       if (c.schedules.length === 0) continue;
-      const run = await deps.prisma.campaignRun.create({
-        data: { campaignId: c.id, scheduledFor: new Date() },
-      });
-      log.info({ campaignId: c.id, runId: run.id }, 'campaign run created');
+      log.debug({ campaignId: c.id }, 'campaign scheduled, cron eval deferred');
     }
     return { campaigns: dueCampaigns.length };
   });

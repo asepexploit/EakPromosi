@@ -1,8 +1,9 @@
+import type { BroadcastSummary, CreateBroadcast, Group, TelegramAccount } from '@eak/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Megaphone, PauseCircle, PlayCircle, Plus, StopCircle } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import { Badge, type BadgeTone } from '../../components/ui/Badge';
+import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Dialog } from '../../components/ui/Dialog';
@@ -14,17 +15,7 @@ import { Progress } from '../../components/ui/Progress';
 import { TBody, THead, Table, TMain, TSub } from '../../components/ui/Table';
 import { apiFetch } from '../../lib/api';
 import { useApiMutation } from '../../lib/mutation';
-import type { BroadcastStatus, BroadcastSummary, CreateBroadcast, Group, TelegramAccount } from '@eak/shared';
-
-const STATUS_TONE: Record<BroadcastStatus, BadgeTone> = {
-  draft: 'default',
-  queued: 'info',
-  sending: 'info',
-  completed: 'ok',
-  failed: 'bad',
-  paused: 'warn',
-  canceled: 'default',
-};
+import { BROADCAST_STATUS } from '../../lib/statusLabels';
 
 export function BroadcastsPage(): JSX.Element {
   const qc = useQueryClient();
@@ -126,8 +117,8 @@ export function BroadcastsPage(): JSX.Element {
                       <td className="r tabular text-ok font-semibold">{b.sentCount}</td>
                       <td className="r tabular text-bad font-semibold">{b.failedCount}</td>
                       <td>
-                        <Badge tone={STATUS_TONE[b.status]} pulse={b.status === 'sending'}>
-                          {b.status}
+                        <Badge tone={BROADCAST_STATUS[b.status].tone} pulse={b.status === 'sending'}>
+                          {BROADCAST_STATUS[b.status].label}
                         </Badge>
                       </td>
                       <td className="r">
@@ -329,7 +320,7 @@ function BroadcastBuilder({ open, onOpenChange }: { open: boolean; onOpenChange:
                       <button
                         type="button"
                         onClick={() => toggleTarget(g.id)}
-                        className="w-full text-left px-3 py-2 border-b border-line-soft last:border-0 hover:bg-sunk flex items-center gap-2.5"
+                        className="w-full text-left px-3 py-2 border-b border-line last:border-0 hover:bg-sunk flex items-center gap-2.5"
                       >
                         <span
                           className={`w-4 h-4 rounded border-[1.5px] grid place-items-center flex-none ${

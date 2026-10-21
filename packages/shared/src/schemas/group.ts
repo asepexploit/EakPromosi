@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { IdSchema, IsoDateTimeSchema } from './common';
+
+import { IdSchema, IsoDateTimeSchema } from './common.js';
 
 /** Modul 04 — status job join (product-spec §5). */
 export const JoinJobStatusSchema = z.enum(['queued', 'joining', 'joined', 'failed', 'approval_required', 'skipped']);

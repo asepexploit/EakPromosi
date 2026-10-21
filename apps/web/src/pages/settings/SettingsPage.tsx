@@ -1,3 +1,4 @@
+import type { ChangePassword, TenantMember } from '@eak/shared';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { KeyRound, User, Users } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
@@ -8,9 +9,9 @@ import { Button } from '../../components/ui/Button';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Field, Input } from '../../components/ui/Input';
 import { PageHeader } from '../../components/ui/PageHeader';
-import { ApiError, apiFetch } from '../../lib/api';
+import type { ApiError} from '../../lib/api';
+import { apiFetch } from '../../lib/api';
 import { useAuthStore } from '../../stores/auth';
-import type { ChangePassword, TenantMember } from '@eak/shared';
 
 export function SettingsPage(): JSX.Element {
   const user = useAuthStore((s) => s.user);
@@ -105,7 +106,7 @@ export function SettingsPage(): JSX.Element {
       <Card>
         <CardHeader title={`Anggota tenant (${members.length})`} icon={<Users size={14} />} />
         <CardBody className="pt-0">
-          <ul className="divide-y divide-line-soft">
+          <ul className="divide-y divide-line">
             {members.map((m) => (
               <li key={m.id} className="py-3 flex justify-between items-center gap-4">
                 <div className="flex items-center gap-3 min-w-0">
@@ -139,7 +140,7 @@ export function SettingsPage(): JSX.Element {
 
 function Row({ label, value }: { label: string; value: ReactNode }): JSX.Element {
   return (
-    <div className="flex justify-between items-center py-2 border-b border-line-soft last:border-b-0">
+    <div className="flex justify-between items-center py-2 border-b border-line last:border-b-0">
       <span className="text-muted">{label}</span>
       <span className="font-medium">{value}</span>
     </div>
